@@ -90,7 +90,14 @@ export function prepareBuiltInCopilotRipgrepShim(platform: string, arch: string,
 		throw new Error(`[prepareBuiltInCopilotRipgrepShim] Copilot SDK directory not found at ${copilotSdkBase}`);
 	}
 
-	const ripgrepSource = path.join(appNodeModulesDir, '@vscode', `ripgrep-${nodePlatform}-${nodeArch}`, 'bin');
+	// After asar packaging, native binaries are unpacked into
+	// `node_modules.asar.unpacked/`. Try that first, then fall back to
+	// `node_modules/` for development builds that skip asar.
+	const unpackedNodeModulesDir = appNodeModulesDir.replace(/\bnode_modules$/, 'node_modules.asar.unpacked');
+	const ripgrepPkg = path.join('@vscode', `ripgrep-${nodePlatform}-${nodeArch}`, 'bin');
+	const ripgrepSource = fs.existsSync(path.join(unpackedNodeModulesDir, ripgrepPkg))
+		? path.join(unpackedNodeModulesDir, ripgrepPkg)
+		: path.join(appNodeModulesDir, ripgrepPkg);
 	if (!fs.existsSync(ripgrepSource)) {
 		throw new Error(`[prepareBuiltInCopilotRipgrepShim] ripgrep source not found at ${ripgrepSource}`);
 	}
