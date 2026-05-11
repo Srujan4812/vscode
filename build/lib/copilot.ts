@@ -90,7 +90,7 @@ export function prepareBuiltInCopilotRipgrepShim(platform: string, arch: string,
 		throw new Error(`[prepareBuiltInCopilotRipgrepShim] Copilot SDK directory not found at ${copilotSdkBase}`);
 	}
 
-	const ripgrepSource = path.join(appNodeModulesDir, '@vscode', 'ripgrep', 'bin');
+	const ripgrepSource = path.join(appNodeModulesDir, '@vscode', `ripgrep-${nodePlatform}-${nodeArch}`, 'bin');
 	if (!fs.existsSync(ripgrepSource)) {
 		throw new Error(`[prepareBuiltInCopilotRipgrepShim] ripgrep source not found at ${ripgrepSource}`);
 	}
