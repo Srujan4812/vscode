@@ -64,8 +64,7 @@ export function getCopilotExcludeFilter(platform: string, arch: string): string[
 }
 
 /**
- * All per-platform @vscode/ripgrep packages that we ship as explicit
- * dependencies so they are installed regardless of the host CPU/OS.
+ * All per-platform @vscode/ripgrep binary packages.
  */
 const ripgrepPlatforms = [
 	'darwin-arm64', 'darwin-x64',
@@ -76,10 +75,6 @@ const ripgrepPlatforms = [
 /**
  * Returns a glob filter that strips @vscode/ripgrep-{platform} packages
  * for architectures other than the build target.
- *
- * All per-platform ripgrep packages are listed as explicit dependencies so
- * they install on every host regardless of CPU, but only the target
- * platform's binary should be included in the packaged output.
  */
 export function getRipgrepExcludeFilter(platform: string, arch: string): string[] {
 	const { nodePlatform, nodeArch } = toNodePlatformArch(platform, arch);
