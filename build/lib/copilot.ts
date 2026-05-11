@@ -64,6 +64,32 @@ export function getCopilotExcludeFilter(platform: string, arch: string): string[
 }
 
 /**
+ * All per-platform @vscode/ripgrep packages that we ship as explicit
+ * dependencies so they are installed regardless of the host CPU/OS.
+ */
+const ripgrepPlatforms = [
+	'darwin-arm64', 'darwin-x64',
+	'linux-arm64', 'linux-arm', 'linux-x64',
+	'win32-arm64', 'win32-x64',
+];
+
+/**
+ * Returns a glob filter that strips @vscode/ripgrep-{platform} packages
+ * for architectures other than the build target.
+ *
+ * All per-platform ripgrep packages are listed as explicit dependencies so
+ * they install on every host regardless of CPU, but only the target
+ * platform's binary should be included in the packaged output.
+ */
+export function getRipgrepExcludeFilter(platform: string, arch: string): string[] {
+	const { nodePlatform, nodeArch } = toNodePlatformArch(platform, arch);
+	const target = `${nodePlatform}-${nodeArch}`;
+	const nonTargetPlatforms = ripgrepPlatforms.filter(p => p !== target);
+	const excludes = nonTargetPlatforms.map(p => `!**/node_modules/@vscode/ripgrep-${p}/**`);
+	return ['**', ...excludes];
+}
+
+/**
  * Materializes the copilot CLI ripgrep shim directly inside the built-in copilot extension.
  *
  * This is used when copilot is shipped as a built-in extension so startup does

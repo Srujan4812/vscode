@@ -99,8 +99,13 @@ jobs:
       - script: |
           set -e
 
+          FORCE_FLAG=""
+          if [ "$(node -p process.arch)" != "$npm_config_arch" ]; then
+            FORCE_FLAG="--force"
+          fi
+
           for i in {1..5}; do # try 5 times
-            npm ci && break
+            npm ci $FORCE_FLAG && break
             if [ $i -eq 5 ]; then
               echo "Npm install failed too many times" >&2
               exit 1
