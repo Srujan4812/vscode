@@ -220,6 +220,17 @@
 	opacity: 0.6;
 }
 
+.copilot-prototype-ft-hint {
+	font-size: 11px;
+	color: var(--vscode-descriptionForeground);
+	margin-top: 8px;
+	opacity: 0.7;
+}
+
+.copilot-prototype-ft-hint .codicon {
+	font-size: 11px;
+}
+
 /* Footer nav — mirrors carousel footer */
 .copilot-prototype-ft-footer {
 	display: flex;
@@ -630,7 +641,8 @@
 	font-weight: 600;
 	color: var(--vscode-foreground);
 	line-height: 1;
-	transition: opacity 0.15s ease;
+	transition: opacity 0.25s ease, transform 0.25s ease;
+	transform: translateY(0);
 }
 
 .copilot-prototype-dashboard-card-percent-value.warning {
@@ -648,7 +660,8 @@
 .copilot-prototype-dashboard-card-percent-label {
 	font-size: 11px;
 	color: var(--vscode-descriptionForeground);
-	transition: opacity 0.15s ease;
+	transition: opacity 0.25s ease, transform 0.25s ease;
+	transform: translateY(0);
 }
 
 /* AICs subtext (e.g. "750 / 1000 AICs") — hidden by default, shown on hover. */
@@ -663,26 +676,68 @@
 
 .copilot-prototype-dashboard-card-percent-aics.hover-detail {
 	opacity: 0;
-	transition: opacity 0.15s ease;
+	transition: opacity 0.25s ease, transform 0.25s ease;
+	transform: translateY(3px);
 	margin-left: 0;
 	padding-left: 0;
 	border-left: none;
 	white-space: nowrap;
 	position: absolute;
 	left: 0;
+}
+
+.hover-detail-fraction {
 	font-size: 14px;
 	font-weight: 600;
 	color: var(--vscode-foreground);
 }
 
+.hover-detail-used {
+	font-size: 11px;
+	font-weight: 400;
+	color: var(--vscode-descriptionForeground);
+}
+
 /* Hover swap: crossfade between % used and the AIC count */
+/* Default / slide variant (Free) */
 .copilot-prototype-dashboard-card-percent-left.has-hover-detail:hover .copilot-prototype-dashboard-card-percent-value,
 .copilot-prototype-dashboard-card-percent-left.has-hover-detail:hover .copilot-prototype-dashboard-card-percent-label {
 	opacity: 0;
+	transform: translateY(-3px);
 }
 
 .copilot-prototype-dashboard-card-percent-left.has-hover-detail:hover .hover-detail {
 	opacity: 1;
+	transform: translateY(0);
+}
+
+/* Fade variant (Pro) — pure crossfade, no movement */
+.copilot-prototype-dashboard-card-percent-left.has-hover-detail.transition-fade .copilot-prototype-dashboard-card-percent-value,
+.copilot-prototype-dashboard-card-percent-left.has-hover-detail.transition-fade .copilot-prototype-dashboard-card-percent-label,
+.copilot-prototype-dashboard-card-percent-left.has-hover-detail.transition-fade .hover-detail {
+	transform: none;
+}
+
+/* Scale variant (Max) — slight zoom in/out */
+.copilot-prototype-dashboard-card-percent-left.has-hover-detail.transition-scale .copilot-prototype-dashboard-card-percent-value,
+.copilot-prototype-dashboard-card-percent-left.has-hover-detail.transition-scale .copilot-prototype-dashboard-card-percent-label {
+	transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.copilot-prototype-dashboard-card-percent-left.has-hover-detail.transition-scale .hover-detail {
+	transition: opacity 0.25s ease, transform 0.25s ease;
+	transform: scale(0.92);
+}
+
+.copilot-prototype-dashboard-card-percent-left.has-hover-detail.transition-scale:hover .copilot-prototype-dashboard-card-percent-value,
+.copilot-prototype-dashboard-card-percent-left.has-hover-detail.transition-scale:hover .copilot-prototype-dashboard-card-percent-label {
+	opacity: 0;
+	transform: scale(1.06);
+}
+
+.copilot-prototype-dashboard-card-percent-left.has-hover-detail.transition-scale:hover .hover-detail {
+	opacity: 1;
+	transform: scale(1);
 }
 
 .copilot-prototype-dashboard-card-bar {

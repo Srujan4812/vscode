@@ -3270,6 +3270,9 @@ export class CopilotTBB3StatusBarContribution extends Disposable implements IWor
 				faqLink.href = 'https://docs.github.com/en/copilot/about-github-copilot/github-copilot-plans';
 				faqLink.target = '_blank';
 				faqLink.append(...renderLabelWithIcons(' $(link-external)'));
+
+				const hintLine = append(body, $('div.copilot-prototype-ft-hint'));
+				hintLine.append(...renderLabelWithIcons(localize('tbb3FtHint', "Click $(sparkle) in the dashboard to see this again.")));
 			}
 
 			// Footer nav
@@ -3362,6 +3365,13 @@ export class CopilotTBB3StatusBarContribution extends Disposable implements IWor
 
 		const titleActions = append(header, $('div.copilot-prototype-dashboard-header-actions'));
 		const headerCtas = append(titleActions, $('div.copilot-prototype-dashboard-header-ctas'));
+		const whatsNewIcon = append(titleActions, $('div.copilot-prototype-dashboard-icon'));
+		whatsNewIcon.append(...renderLabelWithIcons('$(sparkle)'));
+		whatsNewIcon.title = localize('whatsNew', "What's New");
+		whatsNewIcon.tabIndex = 0;
+		whatsNewIcon.addEventListener('click', () => {
+			this.setActiveCell(this._activeSku, 'First Time');
+		});
 		const settingsIcon = append(titleActions, $('div.copilot-prototype-dashboard-icon'));
 		settingsIcon.append(...renderLabelWithIcons('$(settings)'));
 		settingsIcon.title = localize('settings', "Settings");
@@ -3423,7 +3433,7 @@ export class CopilotTBB3StatusBarContribution extends Disposable implements IWor
 			const aic = CopilotPrototypeShellCoinStatusBarContribution.instance?.getTbb3AicAllocation(sku, state)
 				?? { monthlyTotal: 0, monthlyUsed: 0, overageTotal: 0, overageUsed: 0 };
 			const aicLabel = (used: number, total: number) => total > 0
-				? localize('tbb3AicFraction', "{0} / {1}", used.toLocaleString(), total.toLocaleString())
+				? localize('tbb3AicFraction', "{0} / {1} used", used.toLocaleString(), total.toLocaleString())
 				: undefined;
 
 			// Monthly Limit / Monthly Budget card.
@@ -3436,6 +3446,9 @@ export class CopilotTBB3StatusBarContribution extends Disposable implements IWor
 						: 42;
 			const monthlySev = (monthlyApproached || monthlyExhausted || overageExhausted) ? 'celebrate' as const : undefined;
 			const monthlyDisabled = false;
+			const transitionStyle = isFree ? 'slide' as const
+				: (sku === 'Max') ? 'scale' as const
+					: 'fade' as const;
 			this.createCard(cards, {
 				name: monthlyName,
 				resetLabel: this._getMonthlyResetLabel(),
@@ -3444,6 +3457,7 @@ export class CopilotTBB3StatusBarContribution extends Disposable implements IWor
 				highlight: false,
 				disabled: monthlyDisabled,
 				usedLabel: aicLabel(aic.monthlyUsed, aic.monthlyTotal),
+				transitionStyle,
 			});
 
 			// Free SKU also tracks an Inline Suggestions monthly cap.
@@ -3454,15 +3468,16 @@ export class CopilotTBB3StatusBarContribution extends Disposable implements IWor
 					name: localize('tbb3CardInline', "Inline Suggestions"),
 					resetLabel: this._getMonthlyResetLabel(),
 					percent: 18,
-					usedLabel: localize('tbb3InlineFraction', "{0} / {1}", inlineUsed.toLocaleString(), inlineTotal.toLocaleString()),
+					usedLabel: localize('tbb3InlineFraction', "{0} / {1} used", inlineUsed.toLocaleString(), inlineTotal.toLocaleString()),
 				});
 			}
 		}
 
 		// --- Header CTAs ---
-		// Default state across all SKUs has no CTAs (per UX direction).
+		// Default and Reset states across all SKUs have no CTAs (per UX direction).
 		const isDefault = state === 'Default';
-		if (!isDefault && !isEnterprise) {
+		const isReset = monthlyReset || overageReset;
+		if (!isDefault && !isReset && !isEnterprise) {
 			if (isFree) {
 				// Free users must upgrade once monthly limit is exhausted — primary CTA.
 				const isPrimary = monthlyExhausted;
@@ -3819,6 +3834,8 @@ export class CopilotTBB3StatusBarContribution extends Disposable implements IWor
 		usedLabel?: string;
 		/** When set, render a large number + label instead of % + bar (used when no upper bound is known). */
 		valueOnly?: { value: string; label: string };
+		/** Hover transition style: 'slide' (default), 'fade', or 'scale'. */
+		transitionStyle?: 'slide' | 'fade' | 'scale';
 	}): void {
 		const card = append(container, $('div.copilot-prototype-dashboard-card'));
 		if (opts.disabled) { card.classList.add('disabled'); }
@@ -3855,8 +3872,14 @@ export class CopilotTBB3StatusBarContribution extends Disposable implements IWor
 		percentLabel.textContent = localize('cardUsed', "used");
 		if (opts.usedLabel) {
 			const aicsLabel = append(percentLeft, $('span.copilot-prototype-dashboard-card-percent-aics.hover-detail'));
-			aicsLabel.textContent = opts.usedLabel;
+			const fractionSpan = append(aicsLabel, $('span.hover-detail-fraction'));
+			fractionSpan.textContent = opts.usedLabel.replace(/\s*used$/, '');
+			const usedSuffix = append(aicsLabel, $('span.hover-detail-used'));
+			usedSuffix.textContent = ' ' + localize('cardUsed', "used");
 			percentLeft.classList.add('has-hover-detail');
+			if (opts.transitionStyle) {
+				percentLeft.classList.add(`transition-${opts.transitionStyle}`);
+			}
 		}
 		const resetBadge = append(percentRow, $('span.copilot-prototype-dashboard-card-badge'));
 		resetBadge.textContent = opts.resetLabel;
