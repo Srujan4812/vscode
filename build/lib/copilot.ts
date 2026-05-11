@@ -95,9 +95,41 @@ export function prepareBuiltInCopilotRipgrepShim(platform: string, arch: string,
 	// `node_modules/` for development builds that skip asar.
 	const unpackedNodeModulesDir = appNodeModulesDir.replace(/\bnode_modules$/, 'node_modules.asar.unpacked');
 	const ripgrepPkg = path.join('@vscode', `ripgrep-${nodePlatform}-${nodeArch}`, 'bin');
+
+	console.log(`[prepareBuiltInCopilotRipgrepShim] platform=${platform}, arch=${arch} => nodePlatform=${nodePlatform}, nodeArch=${nodeArch}`);
+	console.log(`[prepareBuiltInCopilotRipgrepShim] appNodeModulesDir=${appNodeModulesDir}`);
+	console.log(`[prepareBuiltInCopilotRipgrepShim] unpackedNodeModulesDir=${unpackedNodeModulesDir}`);
+	console.log(`[prepareBuiltInCopilotRipgrepShim] appNodeModulesDir exists: ${fs.existsSync(appNodeModulesDir)}`);
+	console.log(`[prepareBuiltInCopilotRipgrepShim] unpackedNodeModulesDir exists: ${fs.existsSync(unpackedNodeModulesDir)}`);
+
+	// List what's inside the app base to understand the packaging layout
+	const appBase = path.dirname(appNodeModulesDir);
+	try {
+		const appBaseContents = fs.readdirSync(appBase).filter(e => e.startsWith('node_modules'));
+		console.log(`[prepareBuiltInCopilotRipgrepShim] app base node_modules entries: ${JSON.stringify(appBaseContents)}`);
+	} catch (e) {
+		console.log(`[prepareBuiltInCopilotRipgrepShim] could not list app base: ${e}`);
+	}
+
+	// List @vscode packages in both possible locations
+	for (const dir of [appNodeModulesDir, unpackedNodeModulesDir]) {
+		const vscodePkgDir = path.join(dir, '@vscode');
+		try {
+			if (fs.existsSync(vscodePkgDir)) {
+				const entries = fs.readdirSync(vscodePkgDir);
+				console.log(`[prepareBuiltInCopilotRipgrepShim] ${vscodePkgDir} contents: ${JSON.stringify(entries)}`);
+			} else {
+				console.log(`[prepareBuiltInCopilotRipgrepShim] ${vscodePkgDir} does not exist`);
+			}
+		} catch (e) {
+			console.log(`[prepareBuiltInCopilotRipgrepShim] error listing ${vscodePkgDir}: ${e}`);
+		}
+	}
+
 	const ripgrepSource = fs.existsSync(path.join(unpackedNodeModulesDir, ripgrepPkg))
 		? path.join(unpackedNodeModulesDir, ripgrepPkg)
 		: path.join(appNodeModulesDir, ripgrepPkg);
+	console.log(`[prepareBuiltInCopilotRipgrepShim] chosen ripgrepSource=${ripgrepSource}, exists=${fs.existsSync(ripgrepSource)}`);
 	if (!fs.existsSync(ripgrepSource)) {
 		throw new Error(`[prepareBuiltInCopilotRipgrepShim] ripgrep source not found at ${ripgrepSource}`);
 	}
