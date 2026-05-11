@@ -96,7 +96,8 @@ export function prepareBuiltInCopilotRipgrepShim(platform: string, arch: string,
 	const unpackedNodeModulesDir = appNodeModulesDir.replace(/\bnode_modules$/, 'node_modules.asar.unpacked');
 	const ripgrepPkg = path.join('@vscode', `ripgrep-${nodePlatform}-${nodeArch}`, 'bin');
 
-	console.log(`[prepareBuiltInCopilotRipgrepShim] platform=${platform}, arch=${arch} => nodePlatform=${nodePlatform}, nodeArch=${nodeArch}`);
+	console.log(`[prepareBuiltInCopilotRipgrepShim] host: process.platform=${process.platform}, process.arch=${process.arch}`);
+	console.log(`[prepareBuiltInCopilotRipgrepShim] target: platform=${platform}, arch=${arch} => nodePlatform=${nodePlatform}, nodeArch=${nodeArch}`);
 	console.log(`[prepareBuiltInCopilotRipgrepShim] appNodeModulesDir=${appNodeModulesDir}`);
 	console.log(`[prepareBuiltInCopilotRipgrepShim] unpackedNodeModulesDir=${unpackedNodeModulesDir}`);
 	console.log(`[prepareBuiltInCopilotRipgrepShim] appNodeModulesDir exists: ${fs.existsSync(appNodeModulesDir)}`);
