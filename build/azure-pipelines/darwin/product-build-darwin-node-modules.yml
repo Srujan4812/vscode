@@ -66,13 +66,8 @@ jobs:
           xcode-select -print-path
           python3 -m pip install setuptools
 
-          FORCE_FLAG=""
-          if [ "$(node -p process.arch)" != "$VSCODE_ARCH" ]; then
-            FORCE_FLAG="--force"
-          fi
-
           for i in {1..5}; do # try 5 times
-            npm ci $FORCE_FLAG && break
+            npm ci && break
             if [ $i -eq 5 ]; then
               echo "Npm install failed too many times" >&2
               exit 1
@@ -81,6 +76,7 @@ jobs:
           done
         env:
           npm_config_arch: $(VSCODE_ARCH)
+          npm_config_cpu: $(VSCODE_ARCH)
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
           GITHUB_TOKEN: "$(github-distro-mixin-password)"

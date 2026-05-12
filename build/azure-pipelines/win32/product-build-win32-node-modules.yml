@@ -70,11 +70,10 @@ jobs:
       - powershell: |
           . build/azure-pipelines/win32/exec.ps1
           $ErrorActionPreference = "Stop"
-          $npmArgs = @("ci")
-          if ($(node -p process.arch) -ne $env:VSCODE_ARCH) { $npmArgs += "--force" }
-          exec { & npm @npmArgs }
+          exec { npm ci }
         env:
           npm_config_arch: $(VSCODE_ARCH)
+          npm_config_cpu: $(VSCODE_ARCH)
           npm_config_foreground_scripts: "true"
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1

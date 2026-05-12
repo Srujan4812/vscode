@@ -48,15 +48,6 @@
     "yauzl": "^3.0.0",
     "yazl": "^2.4.3"
   },
-  "optionalDependencies": {
-    "@vscode/ripgrep-darwin-arm64": "1.18.0",
-    "@vscode/ripgrep-darwin-x64": "1.18.0",
-    "@vscode/ripgrep-linux-arm": "1.18.0",
-    "@vscode/ripgrep-linux-arm64": "1.18.0",
-    "@vscode/ripgrep-linux-x64": "1.18.0",
-    "@vscode/ripgrep-win32-arm64": "1.18.0",
-    "@vscode/ripgrep-win32-x64": "1.18.0"
-  },
   "overrides": {
     "node-gyp-build": "4.8.1",
     "kerberos@2.1.1": {
