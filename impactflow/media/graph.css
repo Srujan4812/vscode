@@ -1,0 +1,161 @@
+/*---------------------------------------------------------------------------------------------
+ *  ImpactFlow — Architectural Impact Analysis
+ *  MIT License — see LICENSE file at the project root.
+ *
+ *  All colors are sourced from VS Code theme variables so the graph blends
+ *  into both light and dark themes without explicit theme-switching logic.
+ *--------------------------------------------------------------------------------------------*/
+
+:root {
+	--impactflow-border: var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
+	--impactflow-bg: var(--vscode-editor-background);
+	--impactflow-fg: var(--vscode-editor-foreground);
+	--impactflow-muted: var(--vscode-descriptionForeground);
+	--impactflow-accent: var(--vscode-focusBorder);
+
+	--impactflow-seed: var(--vscode-charts-purple, #b267e6);
+	--impactflow-critical: var(--vscode-charts-red, #e06c75);
+	--impactflow-high: var(--vscode-charts-orange, #d19a66);
+	--impactflow-medium: var(--vscode-charts-yellow, #e5c07b);
+	--impactflow-low: var(--vscode-charts-blue, #61afef);
+}
+
+* { box-sizing: border-box; }
+
+body {
+	margin: 0;
+	padding: 0;
+	font-family: var(--vscode-font-family);
+	font-size: var(--vscode-font-size);
+	color: var(--impactflow-fg);
+	background: var(--impactflow-bg);
+	display: flex;
+	flex-direction: column;
+	height: 100vh;
+	overflow: hidden;
+}
+
+#impactflow-header {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 14px 18px;
+	border-bottom: 1px solid var(--impactflow-border);
+	background: var(--vscode-editorWidget-background, var(--impactflow-bg));
+}
+
+#impactflow-title {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 1.1em;
+	font-weight: 600;
+}
+
+.impactflow-badge {
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	font-size: 0.72em;
+	padding: 3px 10px;
+	border-radius: 12px;
+	color: #0b0b0b;
+	background: var(--impactflow-low);
+}
+
+.impactflow-badge[data-level="critical"] { background: var(--impactflow-critical); color: #1b0606; }
+.impactflow-badge[data-level="high"]     { background: var(--impactflow-high);     color: #1b1006; }
+.impactflow-badge[data-level="medium"]   { background: var(--impactflow-medium);   color: #1b1606; }
+.impactflow-badge[data-level="low"]      { background: var(--impactflow-low);      color: #061218; }
+
+#impactflow-seed-label {
+	font-family: var(--vscode-editor-font-family);
+	font-weight: 500;
+	color: var(--impactflow-muted);
+}
+
+#impactflow-summary {
+	color: var(--impactflow-muted);
+	font-size: 0.9em;
+}
+
+main {
+	flex: 1;
+	display: grid;
+	grid-template-columns: 1fr 280px;
+	overflow: hidden;
+}
+
+#cy {
+	width: 100%;
+	height: 100%;
+	background: var(--impactflow-bg);
+}
+
+#impactflow-legend {
+	border-left: 1px solid var(--impactflow-border);
+	padding: 14px 16px;
+	overflow-y: auto;
+	background: var(--vscode-editorWidget-background, var(--impactflow-bg));
+}
+
+#impactflow-legend h3 {
+	margin: 10px 0 6px;
+	font-size: 0.9em;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--impactflow-muted);
+}
+
+.impactflow-legend-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	font-size: 0.9em;
+}
+
+.impactflow-legend-list li {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 4px 0;
+}
+
+.dot {
+	display: inline-block;
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	flex-shrink: 0;
+	border: 2px solid transparent;
+}
+
+.dot.seed     { background: var(--impactflow-seed);     box-shadow: 0 0 0 2px var(--impactflow-bg), 0 0 0 3px var(--impactflow-seed); }
+.dot.critical { background: var(--impactflow-critical); }
+.dot.high     { background: var(--impactflow-high); }
+.dot.medium   { background: var(--impactflow-medium); }
+.dot.low      { background: var(--impactflow-low); }
+
+#impactflow-reasons {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	font-size: 0.85em;
+	color: var(--impactflow-muted);
+}
+
+#impactflow-reasons li {
+	padding: 3px 0;
+	border-bottom: 1px dashed var(--impactflow-border);
+}
+
+#impactflow-reasons li:last-child {
+	border-bottom: 0;
+}
+
+#impactflow-reasons code {
+	background: var(--vscode-textCodeBlock-background);
+	color: var(--impactflow-fg);
+	padding: 0 4px;
+	border-radius: 3px;
+	font-family: var(--vscode-editor-font-family);
+}

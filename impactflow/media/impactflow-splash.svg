@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 360" role="img" aria-labelledby="impactflow-splash-title" preserveAspectRatio="xMidYMid meet">
+	<title id="impactflow-splash-title">ImpactFlow — Architectural impact analysis</title>
+	<defs>
+		<linearGradient id="impactflow-bg" x1="0" x2="1" y1="0" y2="1">
+			<stop offset="0" stop-color="#0f1626"/>
+			<stop offset="1" stop-color="#1a1f35"/>
+		</linearGradient>
+		<radialGradient id="impactflow-seed-glow" cx="50%" cy="50%" r="50%">
+			<stop offset="0" stop-color="#b267e6" stop-opacity="0.55"/>
+			<stop offset="1" stop-color="#b267e6" stop-opacity="0"/>
+		</radialGradient>
+		<filter id="impactflow-soft" x="-20%" y="-20%" width="140%" height="140%">
+			<feGaussianBlur stdDeviation="1.4"/>
+		</filter>
+		<marker id="impactflow-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+			<path d="M0,0 L10,5 L0,10 z" fill="#6b7a99"/>
+		</marker>
+	</defs>
+
+	<rect width="960" height="360" fill="url(#impactflow-bg)"/>
+
+	<!-- Radiating impact rings around the seed -->
+	<g transform="translate(240 180)" opacity="0.45">
+		<circle r="48"  fill="none" stroke="#b267e6" stroke-width="1"/>
+		<circle r="90"  fill="none" stroke="#b267e6" stroke-width="1" stroke-dasharray="4 3"/>
+		<circle r="135" fill="none" stroke="#6b7a99" stroke-width="0.8" stroke-dasharray="2 4"/>
+	</g>
+	<circle cx="240" cy="180" r="60" fill="url(#impactflow-seed-glow)"/>
+
+	<!-- Edges -->
+	<g stroke="#6b7a99" stroke-width="1.6" fill="none" marker-end="url(#impactflow-arrow)" opacity="0.85">
+		<path d="M240 180 L330 130"/>
+		<path d="M240 180 L330 230"/>
+		<path d="M240 180 L160 130"/>
+		<path d="M240 180 L160 230"/>
+		<path d="M330 130 L430 90"/>
+		<path d="M330 130 L430 150"/>
+		<path d="M330 230 L430 240"/>
+		<path d="M430 90  L540 60"/>
+		<path d="M430 90  L540 110"/>
+		<path d="M430 150 L540 170"/>
+		<path d="M430 240 L540 250"/>
+		<path d="M540 60  L650 45"/>
+		<path d="M540 170 L650 160"/>
+		<path d="M540 250 L650 260"/>
+	</g>
+
+	<!-- Seed -->
+	<g>
+		<polygon points="240,152 268,180 240,208 212,180" fill="#b267e6" stroke="#f0dcff" stroke-width="2.5"/>
+		<text x="240" y="185" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="11" fill="#1b0030" font-weight="700">seed</text>
+	</g>
+
+	<!-- Impacted nodes; color encodes risk level -->
+	<g font-family="ui-sans-serif, -apple-system, 'Segoe UI', system-ui, sans-serif" font-size="10" fill="#e6ebf6">
+		<!-- direct dependents -->
+		<circle cx="330" cy="130" r="14" fill="#e06c75" stroke="#1a1f35" stroke-width="2"/>
+		<circle cx="330" cy="230" r="14" fill="#e06c75" stroke="#1a1f35" stroke-width="2"/>
+		<circle cx="160" cy="130" r="12" fill="#d19a66" stroke="#1a1f35" stroke-width="2"/>
+		<circle cx="160" cy="230" r="12" fill="#d19a66" stroke="#1a1f35" stroke-width="2"/>
+		<!-- second hop -->
+		<circle cx="430" cy="90"  r="11" fill="#d19a66" stroke="#1a1f35" stroke-width="2"/>
+		<circle cx="430" cy="150" r="10" fill="#e5c07b" stroke="#1a1f35" stroke-width="2"/>
+		<circle cx="430" cy="240" r="10" fill="#e5c07b" stroke="#1a1f35" stroke-width="2"/>
+		<!-- third hop -->
+		<circle cx="540" cy="60"  r="9" fill="#e5c07b" stroke="#1a1f35" stroke-width="2"/>
+		<circle cx="540" cy="110" r="8" fill="#61afef" stroke="#1a1f35" stroke-width="2"/>
+		<circle cx="540" cy="170" r="8" fill="#61afef" stroke="#1a1f35" stroke-width="2"/>
+		<circle cx="540" cy="250" r="9" fill="#e5c07b" stroke="#1a1f35" stroke-width="2"/>
+		<!-- leaves -->
+		<circle cx="650" cy="45"  r="6" fill="#61afef" stroke="#1a1f35" stroke-width="1.5"/>
+		<circle cx="650" cy="160" r="6" fill="#61afef" stroke="#1a1f35" stroke-width="1.5"/>
+		<circle cx="650" cy="260" r="6" fill="#61afef" stroke="#1a1f35" stroke-width="1.5"/>
+	</g>
+
+	<!-- Title + subtitle -->
+	<g font-family="ui-sans-serif, -apple-system, 'Segoe UI', system-ui, sans-serif">
+		<text x="720" y="120" font-size="36" fill="#f3f7ff" font-weight="700" letter-spacing="-0.5">Impact<tspan fill="#b267e6">Flow</tspan></text>
+		<text x="720" y="150" font-size="13" fill="#9aa8c7" font-weight="500">Architectural impact analysis</text>
+		<text x="720" y="168" font-size="13" fill="#9aa8c7" font-weight="500">for TypeScript workspaces.</text>
+
+		<g transform="translate(720 200)" font-size="12" fill="#d0d8ec">
+			<g>
+				<rect x="0" y="0" width="10" height="10" rx="2" fill="#e06c75"/>
+				<text x="18" y="9">Critical · direct dependents</text>
+			</g>
+			<g transform="translate(0 20)">
+				<rect x="0" y="0" width="10" height="10" rx="2" fill="#d19a66"/>
+				<text x="18" y="9">High · hotspot adjacency</text>
+			</g>
+			<g transform="translate(0 40)">
+				<rect x="0" y="0" width="10" height="10" rx="2" fill="#e5c07b"/>
+				<text x="18" y="9">Medium · second hop</text>
+			</g>
+			<g transform="translate(0 60)">
+				<rect x="0" y="0" width="10" height="10" rx="2" fill="#61afef"/>
+				<text x="18" y="9">Low · decayed tail</text>
+			</g>
+		</g>
+	</g>
+
+	<!-- Bottom caption -->
+	<text x="40" y="335" font-family="ui-sans-serif, -apple-system, 'Segoe UI', system-ui, sans-serif" font-size="11" fill="#6b7a99" font-style="italic">
+		Weighted reverse-BFS with geometric decay · risk scored by fan-in, hop distance, and hotspot keywords.
+	</text>
+</svg>
