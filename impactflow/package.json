@@ -1,0 +1,174 @@
+{
+	"name": "impactflow",
+	"displayName": "ImpactFlow",
+	"description": "Architectural impact analysis and blast-radius visualization for TypeScript codebases.",
+	"version": "0.1.0",
+	"publisher": "srujan",
+	"license": "MIT",
+	"private": true,
+	"engines": {
+		"vscode": "^1.93.0"
+	},
+	"categories": [
+		"Visualization",
+		"Programming Languages",
+		"Other"
+	],
+	"keywords": [
+		"architecture",
+		"dependency graph",
+		"impact analysis",
+		"blast radius",
+		"static analysis",
+		"typescript"
+	],
+	"activationEvents": [
+		"onLanguage:typescript",
+		"onLanguage:typescriptreact",
+		"onLanguage:javascript",
+		"onLanguage:javascriptreact"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "impactflow.analyzeCurrentFile",
+				"title": "ImpactFlow: Analyze Current File",
+				"icon": "$(graph-scatter)"
+			},
+			{
+				"command": "impactflow.showImpactGraph",
+				"title": "ImpactFlow: Show Impact Graph",
+				"icon": "$(graph)"
+			},
+			{
+				"command": "impactflow.rebuildIndex",
+				"title": "ImpactFlow: Rebuild Workspace Index",
+				"icon": "$(refresh)"
+			},
+			{
+				"command": "impactflow.revealFile",
+				"title": "ImpactFlow: Reveal File in Editor"
+			}
+		],
+		"menus": {
+			"editor/title": [
+				{
+					"command": "impactflow.analyzeCurrentFile",
+					"when": "resourceLangId =~ /^(typescript|typescriptreact|javascript|javascriptreact)$/",
+					"group": "navigation@99"
+				}
+			],
+			"view/title": [
+				{
+					"command": "impactflow.rebuildIndex",
+					"when": "view == impactflow.impactView",
+					"group": "navigation"
+				},
+				{
+					"command": "impactflow.showImpactGraph",
+					"when": "view == impactflow.impactView",
+					"group": "navigation"
+				}
+			],
+			"view/item/context": [
+				{
+					"command": "impactflow.revealFile",
+					"when": "view == impactflow.impactView && viewItem == impactflow.file",
+					"group": "inline"
+				}
+			]
+		},
+		"views": {
+			"explorer": [
+				{
+					"id": "impactflow.impactView",
+					"name": "ImpactFlow",
+					"icon": "$(graph)",
+					"contextualTitle": "ImpactFlow"
+				}
+			]
+		},
+		"viewsWelcome": [
+			{
+				"view": "impactflow.impactView",
+				"contents": "No file analyzed yet.\n[Analyze Current File](command:impactflow.analyzeCurrentFile)\n\nOpen a TypeScript or JavaScript file, then run the command above to see its architectural impact."
+			}
+		],
+		"configuration": {
+			"title": "ImpactFlow",
+			"properties": {
+				"impactflow.include": {
+					"type": "array",
+					"items": { "type": "string" },
+					"default": [
+						"**/*.ts",
+						"**/*.tsx",
+						"**/*.js",
+						"**/*.jsx",
+						"**/*.mts",
+						"**/*.cts"
+					],
+					"markdownDescription": "Glob patterns to include when indexing the workspace."
+				},
+				"impactflow.exclude": {
+					"type": "array",
+					"items": { "type": "string" },
+					"default": [
+						"**/node_modules/**",
+						"**/out/**",
+						"**/dist/**",
+						"**/build/**",
+						"**/.next/**",
+						"**/coverage/**",
+						"**/*.d.ts"
+					],
+					"markdownDescription": "Glob patterns to exclude when indexing the workspace."
+				},
+				"impactflow.maxDepth": {
+					"type": "integer",
+					"default": 5,
+					"minimum": 1,
+					"maximum": 15,
+					"markdownDescription": "Maximum propagation depth from the seed node. Beyond this depth, downstream effects are truncated."
+				},
+				"impactflow.decayFactor": {
+					"type": "number",
+					"default": 0.75,
+					"minimum": 0.1,
+					"maximum": 1,
+					"markdownDescription": "Multiplicative decay applied to the propagation weight at each hop. Lower values make the blast radius shrink faster."
+				},
+				"impactflow.hotspotKeywords": {
+					"type": "array",
+					"items": { "type": "string" },
+					"default": [
+						"auth",
+						"middleware",
+						"config",
+						"api",
+						"session",
+						"payment",
+						"security",
+						"database",
+						"migration"
+					],
+					"markdownDescription": "Case-insensitive substrings that mark a module as an architectural hotspot. Matches bump the risk score of the module."
+				}
+			}
+		}
+	},
+	"scripts": {
+		"compile": "tsc -p ./",
+		"watch": "tsc -watch -p ./",
+		"test": "node ./out/test/runTests.js",
+		"lint": "eslint src --ext ts"
+	},
+	"devDependencies": {
+		"@types/node": "20.x",
+		"@types/vscode": "^1.93.0",
+		"@types/mocha": "^10.0.6",
+		"typescript": "^5.4.5",
+		"mocha": "^10.4.0"
+	}
+}
