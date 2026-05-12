@@ -31,6 +31,7 @@ import { ICommandService } from '../../../../platform/commands/common/commands.j
 import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
 import { IContextKey, IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
 import { CodeDataTransfers, containsDragType, getPathForFile } from '../../../../platform/dnd/browser/dnd.js';
+import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
 import { FileSystemProviderCapabilities, IFileService } from '../../../../platform/files/common/files.js';
 import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
 import { ServiceCollection } from '../../../../platform/instantiation/common/serviceCollection.js';
@@ -71,6 +72,7 @@ import { XtermTerminal, getXtermScaledDimensions } from './xterm/xtermTerminal.j
 import { IEnvironmentVariableInfo } from '../common/environmentVariable.js';
 import { ITerminalProcessManager, ITerminalProfileResolverService, ProcessState, TERMINAL_VIEW_ID, TerminalCommandId } from '../common/terminal.js';
 import { TERMINAL_BACKGROUND_COLOR } from '../common/terminalColorRegistry.js';
+import { detectCommandRisk, type ITerminalCommandRisk, type TerminalCommandRiskCategory } from '../common/terminalCommandRisk.js';
 import { TerminalContextKeys } from '../common/terminalContextKey.js';
 import { getUriLabelForShell, getShellIntegrationTimeout, getWorkspaceForTerminal, preparePathForShell } from '../common/terminalEnvironment.js';
 import { IEditorService } from '../../../services/editor/common/editorService.js';
@@ -389,6 +391,7 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 		@IViewsService private readonly _viewsService: IViewsService,
 		@IThemeService private readonly _themeService: IThemeService,
 		@IConfigurationService private readonly _configurationService: IConfigurationService,
+		@IDialogService private readonly _dialogService: IDialogService,
 		@ITerminalLogService private readonly _logService: ITerminalLogService,
 		@IStorageService _storageService: IStorageService,
 		@IAccessibilityService private readonly _accessibilityService: IAccessibilityService,
@@ -1370,6 +1373,18 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 	}
 
 	async sendText(text: string, shouldExecute: boolean, forceBracketedPasteMode?: boolean): Promise<void> {
+		// Command Risk Preview: before any mutation to `text` or the PTY, optionally prompt the
+		// user when the incoming command matches a known destructive pattern. This guard only
+		// runs for `shouldExecute === true` calls so that non-execution writes (ctrl+c, partial
+		// input, bracketed-paste chunks from other paths) cannot introduce any interactive
+		// latency. When the setting is off (default), this is a single configuration lookup.
+		if (shouldExecute && this._configurationService.getValue(TerminalSettingId.CommandRiskPreviewEnabled) === true) {
+			const allowed = await this._confirmCommandRiskPreview(text);
+			if (!allowed) {
+				return;
+			}
+		}
+
 		// Apply bracketed paste sequences if the terminal has the mode enabled, this will prevent
 		// the text from triggering keybindings and ensure new lines are handled properly
 		if (forceBracketedPasteMode && this.xterm?.raw.modes.bracketedPasteMode) {
@@ -1390,6 +1405,65 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 		this.xterm?.scrollToBottom();
 		if (shouldExecute) {
 			this._onDidExecuteText.fire();
+		}
+	}
+
+	/**
+	 * Prompt the user for confirmation when the supplied command matches a known
+	 * destructive pattern. Returns `true` when the caller should proceed with
+	 * execution and `false` when the user cancelled.
+	 *
+	 * This is a private helper for {@link sendText}. It is only invoked when the
+	 * {@link TerminalSettingId.CommandRiskPreviewEnabled} setting is enabled and
+	 * the caller asked for the text to be executed.
+	 */
+	private async _confirmCommandRiskPreview(text: string): Promise<boolean> {
+		const risk = detectCommandRisk(text);
+		if (!risk) {
+			return true;
+		}
+		const { confirmed } = await this._dialogService.confirm({
+			type: risk.level === 'high' ? 'warning' : 'question',
+			message: nls.localize('terminalCommandRiskPreview.message', "Run potentially destructive command?"),
+			detail: this._formatCommandRiskDetail(risk, text),
+			primaryButton: nls.localize({ key: 'terminalCommandRiskPreview.run', comment: ['&& denotes a mnemonic'] }, "&&Run Command"),
+			cancelButton: nls.localize('terminalCommandRiskPreview.cancel', "Cancel"),
+		});
+		return confirmed;
+	}
+
+	private _formatCommandRiskDetail(risk: ITerminalCommandRisk, original: string): string {
+		const displayCommand = original.replace(/\r?\n/g, ' ').trim();
+		const categoryLabel = this._commandRiskCategoryLabel(risk.category);
+		const levelLine = risk.level === 'high'
+			? nls.localize('terminalCommandRiskPreview.detail.high', "High risk: {0}", categoryLabel)
+			: nls.localize('terminalCommandRiskPreview.detail.medium', "Potentially destructive: {0}", categoryLabel);
+		return nls.localize(
+			'terminalCommandRiskPreview.detail',
+			"{0}\n\nCommand:\n{1}",
+			levelLine,
+			displayCommand
+		);
+	}
+
+	private _commandRiskCategoryLabel(category: TerminalCommandRiskCategory): string {
+		switch (category) {
+			case 'destructiveFilesystem':
+				return nls.localize('terminalCommandRiskPreview.category.destructiveFilesystem', "recursive force-delete of files");
+			case 'destructiveGit':
+				return nls.localize('terminalCommandRiskPreview.category.destructiveGit', "destructive git operation");
+			case 'destructiveContainer':
+				return nls.localize('terminalCommandRiskPreview.category.destructiveContainer', "destructive container or orchestrator operation");
+			case 'destructivePackage':
+				return nls.localize('terminalCommandRiskPreview.category.destructivePackage', "destructive package manager operation");
+			case 'destructiveDisk':
+				return nls.localize('terminalCommandRiskPreview.category.destructiveDisk', "raw disk write or filesystem format");
+			case 'privilegedPermission':
+				return nls.localize('terminalCommandRiskPreview.category.privilegedPermission', "broadly-scoped permission change");
+			case 'remoteCodeExecution':
+				return nls.localize('terminalCommandRiskPreview.category.remoteCodeExecution', "piping remote content directly into a shell");
+			case 'forkBomb':
+				return nls.localize('terminalCommandRiskPreview.category.forkBomb', "fork bomb");
 		}
 	}
 
