@@ -55,6 +55,7 @@ export const enum TerminalSettingId {
 	AltClickMovesCursor = 'terminal.integrated.altClickMovesCursor',
 	CopyOnSelection = 'terminal.integrated.copyOnSelection',
 	EnableMultiLinePasteWarning = 'terminal.integrated.enableMultiLinePasteWarning',
+	CommandRiskPreviewEnabled = 'terminal.integrated.commandRiskPreview.enabled',
 	DrawBoldTextInBrightColors = 'terminal.integrated.drawBoldTextInBrightColors',
 	FontFamily = 'terminal.integrated.fontFamily',
 	FontSize = 'terminal.integrated.fontSize',

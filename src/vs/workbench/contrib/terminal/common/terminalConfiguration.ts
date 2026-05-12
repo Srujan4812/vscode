@@ -171,6 +171,12 @@ const terminalConfiguration: IStringDictionary<IConfigurationPropertySchema> = {
 		],
 		default: 'auto'
 	},
+	[TerminalSettingId.CommandRiskPreviewEnabled]: {
+		markdownDescription: localize('terminal.integrated.commandRiskPreview.enabled', "When enabled, shows a confirmation dialog before the terminal executes a command submitted through the VS Code API, a task, or a `Terminal: Run Recent Command`-style action when the command matches a curated list of potentially destructive patterns (for example `rm -rf`, `git reset --hard`, `docker system prune`, or piping a remote script into a shell).\n\nThis setting does not intercept commands that are typed interactively into the terminal — only programmatic execution paths are covered so that interactive latency is not affected."),
+		type: 'boolean',
+		default: false,
+		tags: ['preview']
+	},
 	[TerminalSettingId.DrawBoldTextInBrightColors]: {
 		description: localize('terminal.integrated.drawBoldTextInBrightColors', "Controls whether bold text in the terminal will always use the \"bright\" ANSI color variant."),
 		type: 'boolean',
