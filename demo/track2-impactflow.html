@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Track 2 Demo · ImpactFlow</title>
+<style>
+	:root {
+		--bg: #0f1626;
+		--panel: #1a1f35;
+		--fg: #e6ebf6;
+		--muted: #9aa8c7;
+		--border: #2e3552;
+		--accent: #61afef;
+
+		--seed: #b267e6;
+		--critical: #e06c75;
+		--high: #d19a66;
+		--medium: #e5c07b;
+		--low: #61afef;
+	}
+	* { box-sizing: border-box; }
+	html, body { height: 100%; margin: 0; }
+	body {
+		font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+		background: var(--bg);
+		color: var(--fg);
+		display: flex; flex-direction: column;
+		overflow: hidden;
+	}
+	header {
+		padding: 14px 24px;
+		border-bottom: 1px solid var(--border);
+		background: linear-gradient(180deg, var(--panel) 0%, var(--bg) 100%);
+		display: flex; align-items: center; justify-content: space-between;
+		flex-wrap: wrap; gap: 12px;
+	}
+	header h1 { margin: 0; font-size: 1.2em; font-weight: 600; }
+	header h1 .logo-ff { color: var(--seed); }
+	.badge {
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		font-size: 0.72em;
+		padding: 3px 10px;
+		border-radius: 12px;
+		background: var(--critical);
+		color: #1b0606;
+		font-weight: 700;
+		margin-left: 10px;
+		vertical-align: middle;
+	}
+	#seed-label {
+		font-family: ui-monospace, Consolas, monospace;
+		color: var(--muted);
+		margin-left: 12px;
+		font-size: 0.9em;
+	}
+	#summary { color: var(--muted); font-size: 0.9em; }
+
+	main {
+		flex: 1;
+		display: grid;
+		grid-template-columns: 1fr 320px;
+		overflow: hidden;
+	}
+	#cy { background: var(--bg); width: 100%; height: 100%; }
+
+	aside {
+		border-left: 1px solid var(--border);
+		padding: 16px;
+		overflow-y: auto;
+		background: var(--panel);
+	}
+	aside h3 {
+		margin: 10px 0 6px;
+		font-size: 0.8em;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--muted);
+	}
+	.legend { list-style: none; padding: 0; margin: 0 0 16px; font-size: 0.9em; }
+	.legend li { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+	.dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+	.dot.seed { background: var(--seed); box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--seed); }
+	.dot.critical { background: var(--critical); }
+	.dot.high { background: var(--high); }
+	.dot.medium { background: var(--medium); }
+	.dot.low { background: var(--low); }
+
+	.impact-list { list-style: none; padding: 0; margin: 0; font-size: 0.82em; }
+	.impact-list li {
+		padding: 6px 0;
+		border-bottom: 1px dashed var(--border);
+		display: flex; justify-content: space-between; align-items: center; gap: 8px;
+	}
+	.impact-list li:last-child { border-bottom: 0; }
+	.impact-list code { font-family: ui-monospace, Consolas, monospace; color: var(--fg); font-size: 0.95em; }
+	.impact-list .meta { color: var(--muted); font-size: 0.85em; }
+	.lvl { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+
+	.note {
+		padding: 14px 24px;
+		background: rgba(178, 103, 230, 0.08);
+		border-top: 1px solid var(--border);
+		color: var(--muted);
+		font-size: 0.85em;
+	}
+	.note a { color: var(--accent); }
+</style>
+<script src="https://unpkg.com/cytoscape@3.28.1/dist/cytoscape.min.js"></script>
+</head>
+<body>
+<header>
+	<div>
+		<h1>Impact<span class="logo-ff">Flow</span><span class="badge" id="blast-badge">critical</span><span id="seed-label">src/core/auth.ts</span></h1>
+	</div>
+	<div id="summary"></div>
+</header>
+<main>
+	<div id="cy"></div>
+	<aside>
+		<h3>Legend</h3>
+		<ul class="legend">
+			<li><span class="dot seed"></span>Seed (file being analyzed)</li>
+			<li><span class="dot critical"></span>Critical risk</li>
+			<li><span class="dot high"></span>High risk</li>
+			<li><span class="dot medium"></span>Medium risk</li>
+			<li><span class="dot low"></span>Low risk</li>
+		</ul>
+		<h3>Impacted modules</h3>
+		<ul class="impact-list" id="impact-list"></ul>
+		<h3>Reasons</h3>
+		<ul class="impact-list" id="reasons-list"></ul>
+	</aside>
+</main>
+<div class="note">
+	Sample scenario: a developer is about to edit <code>src/core/auth.ts</code>. ImpactFlow walks the reverse dependency graph,
+	weights each edge by kind (runtime import &gt; re-export &gt; dynamic &gt; type-only), and decays the impact weight
+	with each hop. Nodes are sized by impact weight and colored by computed risk level. Click any node to "open" the file
+	(this demo just logs the URI — in the real extension it calls <code>vscode.open</code>).
+	Source: <a href="https://github.com/Srujan4812/vscode/tree/feature/impactflow/impactflow" target="_blank" rel="noopener">impactflow/</a>.
+</div>
+<script>
+// A realistic sample — seed is core/auth.ts; everything downstream
+// follows reverse edges from it. Risk levels and weights are hand-set
+// to match the kind of output the real scorer would produce.
+const elements = [
+	// ---- Seed ----
+	{ data: { id: 'src/core/auth.ts', label: 'auth.ts', kind: 'seed', level: 'critical', depth: 0, weight: 1.00, hotspots: ['auth'] } },
+
+	// ---- Depth 1 (direct dependents) ----
+	{ data: { id: 'src/services/loginService.ts', label: 'loginService.ts', kind: 'impacted', level: 'critical', depth: 1, weight: 0.75, hotspots: ['auth'] } },
+	{ data: { id: 'src/services/sessionManager.ts', label: 'sessionManager.ts', kind: 'impacted', level: 'critical', depth: 1, weight: 0.75, hotspots: ['session'] } },
+	{ data: { id: 'src/middleware/authMiddleware.ts', label: 'authMiddleware.ts', kind: 'impacted', level: 'critical', depth: 1, weight: 0.75, hotspots: ['auth', 'middleware'] } },
+	{ data: { id: 'src/api/authRoutes.ts', label: 'authRoutes.ts', kind: 'impacted', level: 'high', depth: 1, weight: 0.70, hotspots: ['api', 'auth'] } },
+
+	// ---- Depth 2 ----
+	{ data: { id: 'src/routes/userRoutes.ts', label: 'userRoutes.ts', kind: 'impacted', level: 'high', depth: 2, weight: 0.56, hotspots: ['api'] } },
+	{ data: { id: 'src/routes/adminRoutes.ts', label: 'adminRoutes.ts', kind: 'impacted', level: 'high', depth: 2, weight: 0.56, hotspots: ['api'] } },
+	{ data: { id: 'src/services/paymentService.ts', label: 'paymentService.ts', kind: 'impacted', level: 'high', depth: 2, weight: 0.52, hotspots: ['payment'] } },
+	{ data: { id: 'src/websocket/wsAuth.ts', label: 'wsAuth.ts', kind: 'impacted', level: 'medium', depth: 2, weight: 0.42, hotspots: ['auth'] } },
+	{ data: { id: 'src/config/authConfig.ts', label: 'authConfig.ts', kind: 'impacted', level: 'medium', depth: 2, weight: 0.40, hotspots: ['config', 'auth'] } },
+
+	// ---- Depth 3 ----
+	{ data: { id: 'src/controllers/userController.ts', label: 'userController.ts', kind: 'impacted', level: 'medium', depth: 3, weight: 0.32, hotspots: [] } },
+	{ data: { id: 'src/controllers/adminController.ts', label: 'adminController.ts', kind: 'impacted', level: 'medium', depth: 3, weight: 0.32, hotspots: [] } },
+	{ data: { id: 'src/jobs/paymentWorker.ts', label: 'paymentWorker.ts', kind: 'impacted', level: 'medium', depth: 3, weight: 0.30, hotspots: ['payment'] } },
+
+	// ---- Depth 4 (decayed tail) ----
+	{ data: { id: 'src/app.ts', label: 'app.ts', kind: 'impacted', level: 'low', depth: 4, weight: 0.22, hotspots: [] } },
+	{ data: { id: 'src/server.ts', label: 'server.ts', kind: 'impacted', level: 'low', depth: 4, weight: 0.22, hotspots: [] } },
+	{ data: { id: 'src/routes/index.ts', label: 'routes/index.ts', kind: 'impacted', level: 'low', depth: 4, weight: 0.18, hotspots: [] } },
+
+	// ---- Edges (reversed: source depends on target, we traverse reverse) ----
+	// In Cytoscape, arrow goes source -> target, matching "source imports target".
+	{ data: { id: 'e1', source: 'src/services/loginService.ts',   target: 'src/core/auth.ts', kind: 'import' } },
+	{ data: { id: 'e2', source: 'src/services/sessionManager.ts', target: 'src/core/auth.ts', kind: 'import' } },
+	{ data: { id: 'e3', source: 'src/middleware/authMiddleware.ts', target: 'src/core/auth.ts', kind: 'import' } },
+	{ data: { id: 'e4', source: 'src/api/authRoutes.ts', target: 'src/core/auth.ts', kind: 'import' } },
+
+	{ data: { id: 'e5', source: 'src/routes/userRoutes.ts', target: 'src/middleware/authMiddleware.ts', kind: 'import' } },
+	{ data: { id: 'e6', source: 'src/routes/adminRoutes.ts', target: 'src/middleware/authMiddleware.ts', kind: 'import' } },
+	{ data: { id: 'e7', source: 'src/services/paymentService.ts', target: 'src/services/sessionManager.ts', kind: 'import' } },
+	{ data: { id: 'e8', source: 'src/websocket/wsAuth.ts', target: 'src/core/auth.ts', kind: 'reexport' } },
+	{ data: { id: 'e9', source: 'src/config/authConfig.ts', target: 'src/core/auth.ts', kind: 'typeOnly' } },
+
+	{ data: { id: 'e10', source: 'src/controllers/userController.ts', target: 'src/routes/userRoutes.ts', kind: 'import' } },
+	{ data: { id: 'e11', source: 'src/controllers/adminController.ts', target: 'src/routes/adminRoutes.ts', kind: 'import' } },
+	{ data: { id: 'e12', source: 'src/jobs/paymentWorker.ts', target: 'src/services/paymentService.ts', kind: 'import' } },
+
+	{ data: { id: 'e13', source: 'src/app.ts', target: 'src/controllers/userController.ts', kind: 'import' } },
+	{ data: { id: 'e14', source: 'src/app.ts', target: 'src/controllers/adminController.ts', kind: 'import' } },
+	{ data: { id: 'e15', source: 'src/server.ts', target: 'src/app.ts', kind: 'import' } },
+	{ data: { id: 'e16', source: 'src/routes/index.ts', target: 'src/routes/userRoutes.ts', kind: 'import' } },
+	{ data: { id: 'e17', source: 'src/routes/index.ts', target: 'src/routes/adminRoutes.ts', kind: 'import' } },
+];
+
+function themeVar(name) {
+	return getComputedStyle(document.documentElement).getPropertyValue('--' + name).trim();
+}
+
+const cy = cytoscape({
+	container: document.getElementById('cy'),
+	elements,
+	wheelSensitivity: 0.2,
+	style: [
+		{ selector: 'node', style: {
+			'background-color': (ele) => themeVar(ele.data('level')),
+			'border-color': themeVar('border'),
+			'border-width': 1.5,
+			'label': 'data(label)',
+			'color': themeVar('fg'),
+			'font-size': 10,
+			'text-valign': 'bottom',
+			'text-margin-y': 6,
+			'width':  (ele) => 20 + (1 - ele.data('depth') / 6) * 26 * Math.max(ele.data('weight'), 0.2),
+			'height': (ele) => 20 + (1 - ele.data('depth') / 6) * 26 * Math.max(ele.data('weight'), 0.2),
+		}},
+		{ selector: 'node[kind = "seed"]', style: {
+			'background-color': themeVar('seed'),
+			'border-color': '#f0dcff',
+			'border-width': 3,
+			'shape': 'diamond',
+			'width': 60, 'height': 60,
+			'font-size': 12,
+			'font-weight': 'bold',
+		}},
+		{ selector: 'edge', style: {
+			'curve-style': 'bezier',
+			'target-arrow-shape': 'triangle',
+			'line-color': themeVar('border'),
+			'target-arrow-color': themeVar('border'),
+			'width': (ele) => ele.data('kind') === 'import' ? 2.2 : ele.data('kind') === 'reexport' ? 1.8 : 1.2,
+			'opacity': 0.6,
+		}},
+		{ selector: 'edge[kind = "typeOnly"], edge[kind = "testOnly"]', style: { 'line-style': 'dashed', 'opacity': 0.4 }},
+	],
+});
+
+cy.layout({ name: 'cose', animate: false, fit: true, padding: 30, idealEdgeLength: 110, nodeRepulsion: 5500 }).run();
+cy.on('tap', 'node', (evt) => {
+	console.log('would open:', evt.target.data('id'));
+});
+
+// Sidebar
+const listEl = document.getElementById('impact-list');
+const order = ['critical', 'high', 'medium', 'low'];
+const nodes = elements.filter(e => !e.data.source && e.data.kind !== 'seed');
+nodes.sort((a, b) => b.data.weight - a.data.weight);
+for (const n of nodes) {
+	const li = document.createElement('li');
+	const color = getComputedStyle(document.documentElement).getPropertyValue('--' + n.data.level).trim();
+	li.innerHTML = `<span><span class="lvl" style="background:${color}"></span><code>${n.data.label}</code></span><span class="meta">d${n.data.depth} · w${n.data.weight.toFixed(2)}</span>`;
+	li.addEventListener('click', () => {
+		cy.$('node').removeClass('highlight');
+		const node = cy.$id(n.data.id);
+		cy.center(node);
+		cy.animate({ zoom: 1.3, center: { eles: node } }, { duration: 400 });
+	});
+	li.style.cursor = 'pointer';
+	listEl.appendChild(li);
+}
+
+// Summary + reasons panel — computed like the real blast-radius scorer would
+const hotspots = Array.from(new Set(nodes.flatMap(n => n.data.hotspots))).sort();
+document.getElementById('summary').textContent =
+	`Impacted modules: ${nodes.length} · score 0.78 · hotspots: ${hotspots.join(', ')}`;
+
+const reasons = [
+	{ tag: 'largeBlastRadius:16', detail: '16 modules affected' },
+	{ tag: `hotspotsAffected:${hotspots.join(',')}`, detail: 'multiple architectural hotspots in the impact set' },
+	{ tag: 'strongCentralImpact', detail: 'top-5 nodes average score &gt; 0.6' },
+	{ tag: 'directDependent', detail: '4 modules are direct reverse-dependents' },
+];
+const reasonsEl = document.getElementById('reasons-list');
+for (const r of reasons) {
+	const li = document.createElement('li');
+	li.innerHTML = `<code>${r.tag}</code><span class="meta">${r.detail}</span>`;
+	reasonsEl.appendChild(li);
+}
+</script>
+</body>
+</html>

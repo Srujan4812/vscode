@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Track 1 Demo · Terminal Command Risk Preview</title>
+<style>
+	:root {
+		--bg: #1e1e1e;
+		--fg: #d4d4d4;
+		--muted: #8d939a;
+		--panel: #252526;
+		--panel-border: #333;
+		--accent: #0e639c;
+		--accent-hover: #1177bb;
+		--warning: #e06c75;
+		--ok: #98c379;
+		--yellow: #e5c07b;
+		--purple: #b267e6;
+	}
+	* { box-sizing: border-box; }
+	body {
+		margin: 0;
+		font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+		background: var(--bg);
+		color: var(--fg);
+		min-height: 100vh;
+		padding: 32px;
+		line-height: 1.5;
+	}
+	.container { max-width: 960px; margin: 0 auto; }
+	header h1 { font-size: 1.5em; margin: 0 0 4px; font-weight: 600; }
+	header p { color: var(--muted); margin: 0 0 24px; }
+	.badge {
+		display: inline-block;
+		padding: 2px 10px;
+		border-radius: 10px;
+		font-size: 0.7em;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		background: var(--accent);
+		color: white;
+		font-weight: 600;
+		margin-left: 8px;
+		vertical-align: middle;
+	}
+
+	.panel {
+		background: var(--panel);
+		border: 1px solid var(--panel-border);
+		border-radius: 6px;
+		padding: 20px;
+		margin-bottom: 20px;
+	}
+
+	label { display: block; font-size: 0.85em; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+	textarea {
+		width: 100%;
+		min-height: 80px;
+		padding: 10px 14px;
+		background: #1b1b1b;
+		color: var(--fg);
+		border: 1px solid var(--panel-border);
+		border-radius: 4px;
+		font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+		font-size: 14px;
+		resize: vertical;
+	}
+	textarea:focus { outline: none; border-color: var(--accent); }
+
+	.preset-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+	.preset {
+		background: transparent;
+		color: var(--fg);
+		border: 1px solid var(--panel-border);
+		padding: 4px 10px;
+		border-radius: 4px;
+		font-family: ui-monospace, Consolas, monospace;
+		font-size: 12px;
+		cursor: pointer;
+	}
+	.preset:hover { border-color: var(--accent); }
+	.preset.danger { border-color: rgba(224, 108, 117, 0.4); color: #f0aab0; }
+	.preset.safe { border-color: rgba(152, 195, 121, 0.35); color: #b6d998; }
+
+	button.submit {
+		margin-top: 16px;
+		background: var(--accent);
+		color: white;
+		border: none;
+		padding: 8px 20px;
+		border-radius: 4px;
+		cursor: pointer;
+		font-size: 14px;
+		font-weight: 600;
+	}
+	button.submit:hover { background: var(--accent-hover); }
+
+	/* Dialog — VS Code modal style */
+	.dialog {
+		margin-top: 24px;
+		background: #2c2c2c;
+		border: 1px solid var(--panel-border);
+		border-radius: 6px;
+		overflow: hidden;
+		box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+	}
+	.dialog-header {
+		padding: 14px 18px;
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		border-bottom: 1px solid var(--panel-border);
+	}
+	.dialog-header .icon {
+		width: 28px; height: 28px; flex-shrink: 0;
+		display: flex; align-items: center; justify-content: center;
+		border-radius: 50%;
+		font-weight: 700;
+	}
+	.dialog-header.high  .icon { background: rgba(224, 108, 117, 0.25); color: var(--warning); }
+	.dialog-header.medium .icon { background: rgba(229, 192, 123, 0.25); color: var(--yellow); }
+	.dialog-header.safe   .icon { background: rgba(152, 195, 121, 0.25); color: var(--ok); }
+	.dialog-header .title { font-weight: 600; font-size: 1.05em; }
+	.dialog-body { padding: 16px 18px; white-space: pre-wrap; color: var(--fg); font-size: 0.9em; }
+	.dialog-body code {
+		display: block;
+		margin-top: 10px;
+		padding: 10px 12px;
+		background: #1b1b1b;
+		border-radius: 4px;
+		font-family: ui-monospace, Consolas, monospace;
+		color: var(--yellow);
+		word-break: break-all;
+	}
+	.dialog-footer {
+		padding: 12px 18px;
+		display: flex;
+		justify-content: flex-end;
+		gap: 10px;
+		border-top: 1px solid var(--panel-border);
+		background: #242424;
+	}
+	.dialog-footer button {
+		padding: 6px 18px;
+		border-radius: 3px;
+		font-size: 13px;
+		cursor: pointer;
+		border: 1px solid transparent;
+	}
+	.dialog-footer .primary { background: var(--accent); color: white; }
+	.dialog-footer .primary:hover { background: var(--accent-hover); }
+	.dialog-footer .secondary { background: transparent; color: var(--fg); border-color: var(--panel-border); }
+
+	.reasons { margin-top: 10px; color: var(--muted); font-size: 0.82em; }
+	.reasons span { display: inline-block; padding: 1px 8px; background: #1b1b1b; border-radius: 3px; margin-right: 6px; font-family: ui-monospace, Consolas, monospace; }
+
+	footer { margin-top: 32px; color: var(--muted); font-size: 0.85em; text-align: center; }
+	footer a { color: var(--accent); }
+	footer a:hover { color: var(--accent-hover); }
+</style>
+</head>
+<body>
+<div class="container">
+	<header>
+		<h1>Terminal Command Risk Preview<span class="badge">Track 1 Demo</span></h1>
+		<p>Paste or type any command. The detector below is a faithful port of the one shipping on <code>feature/terminal-risk-preview</code> — same rules, same categories, same decision logic.</p>
+	</header>
+
+	<div class="panel">
+		<label for="cmd">Command</label>
+		<textarea id="cmd" placeholder="Type a command, or click a preset below…">rm -rf /tmp/build</textarea>
+		<div class="preset-row" id="presets"></div>
+		<button class="submit" id="run">Submit to Terminal (simulated)</button>
+	</div>
+
+	<div id="out"></div>
+
+	<footer>
+		<p>This demo runs the <strong>actual detector logic</strong> from
+			<a href="https://github.com/Srujan4812/vscode/blob/feature/terminal-risk-preview/src/vs/workbench/contrib/terminal/common/terminalCommandRisk.ts" target="_blank" rel="noopener">terminalCommandRisk.ts</a>,
+			ported to browser JS with no other changes.</p>
+	</footer>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Port of the real detector — keep in sync with terminalCommandRisk.ts
+// ---------------------------------------------------------------------------
+
+const RM_COMBINED_FLAG = /-[a-zA-Z]*(?:[rR][a-zA-Z]*f|f[a-zA-Z]*[rR])[a-zA-Z]*/;
+const RM_SEPARATE_RF = /(?:-[rR]\s+-f|-f\s+-[rR]|--recursive\s+--force|--force\s+--recursive|--recursive\s+-f|-[rR]\s+--force|--force\s+-[rR]|-f\s+--recursive)/;
+
+const rules = [
+	{ pattern: /:\s*\(\s*\)\s*\{\s*:\s*\|\s*:\s*&\s*\}\s*;\s*:/,
+	  level: 'high', category: 'forkBomb', reasons: ['forkBomb'] },
+
+	{ pattern: new RegExp(String.raw`\brm\b[^|;&]*\s` + RM_COMBINED_FLAG.source + String.raw`\b`),
+	  level: 'high', category: 'destructiveFilesystem', reasons: ['recursiveForceDelete'] },
+	{ pattern: new RegExp(String.raw`\brm\b[^|;&]*\s` + RM_SEPARATE_RF.source + String.raw`\b`),
+	  level: 'high', category: 'destructiveFilesystem', reasons: ['recursiveForceDelete'] },
+	{ pattern: /\brmdir\b[^|;&]*\s\/s\b[^|;&]*\s\/q\b|\brmdir\b[^|;&]*\s\/q\b[^|;&]*\s\/s\b/i,
+	  level: 'high', category: 'destructiveFilesystem', reasons: ['recursiveForceDelete'] },
+	{ pattern: /\bdel\b[^|;&]*\s\/[sS]\b[^|;&]*\s\/[qQ]\b|\bdel\b[^|;&]*\s\/[qQ]\b[^|;&]*\s\/[sS]\b/,
+	  level: 'high', category: 'destructiveFilesystem', reasons: ['recursiveForceDelete'] },
+	{ pattern: /\bRemove-Item\b[^|;&]*-Recurse\b[^|;&]*-Force\b|\bRemove-Item\b[^|;&]*-Force\b[^|;&]*-Recurse\b/i,
+	  level: 'high', category: 'destructiveFilesystem', reasons: ['recursiveForceDelete'] },
+
+	{ pattern: /\bdd\b[^|;&]*\bof=\/dev\/(?:sd[a-z]\d*|nvme\d+n\d+(?:p\d+)?|hd[a-z]\d*|disk\d+|rdisk\d+)\b/,
+	  level: 'high', category: 'destructiveDisk', reasons: ['blockDeviceWrite'] },
+	{ pattern: /\bmkfs(?:\.[a-z0-9]+)?\b\s+\/dev\/[a-z0-9]+/,
+	  level: 'high', category: 'destructiveDisk', reasons: ['filesystemFormat'] },
+
+	{ pattern: /\bgit\s+reset\s+(?:--\S+\s+)*--hard\b/,
+	  level: 'high', category: 'destructiveGit', reasons: ['gitResetHard'] },
+	{ pattern: /\bgit\s+clean\s+(?:-[a-zA-Z]*[fd][a-zA-Z]*|--force)\b/,
+	  level: 'high', category: 'destructiveGit', reasons: ['gitCleanForce'] },
+	{ pattern: /\bgit\s+push\s+(?:[^|;&]*\s)?(?:--force(?!-with-lease)\b|-f\b)/,
+	  level: 'medium', category: 'destructiveGit', reasons: ['gitForcePush'] },
+	{ pattern: /\bgit\s+branch\s+-D\b|\bgit\s+branch\s+--delete\s+--force\b|\bgit\s+branch\s+--force\s+--delete\b/,
+	  level: 'medium', category: 'destructiveGit', reasons: ['gitBranchForceDelete'] },
+
+	{ pattern: /\bdocker\s+system\s+prune\b/,
+	  level: 'high', category: 'destructiveContainer', reasons: ['containerSystemPrune'] },
+	{ pattern: /\bdocker\s+volume\s+prune\b|\bdocker\s+volume\s+rm\b/,
+	  level: 'high', category: 'destructiveContainer', reasons: ['containerVolumeRemove'] },
+	{ pattern: /\bdocker\s+(?:rm|container\s+rm)\b[^|;&]*\s(?:--force|-[a-zA-Z]*f[a-zA-Z]*)\b/,
+	  level: 'medium', category: 'destructiveContainer', reasons: ['containerForceRemove'] },
+	{ pattern: /\bkubectl\s+delete\b[^|;&]*--all\b/,
+	  level: 'high', category: 'destructiveContainer', reasons: ['kubectlDeleteAll'] },
+
+	{ pattern: /\bnpm\s+(?:uninstall|rm|remove)\s+(?:[^|;&]*\s)?(?:-g|--global)\b/,
+	  level: 'medium', category: 'destructivePackage', reasons: ['globalPackageRemove'] },
+	{ pattern: /\b(?:brew|apt|apt-get|yum|dnf|pacman)\s+(?:remove|uninstall|purge|autoremove)\b/,
+	  level: 'medium', category: 'destructivePackage', reasons: ['systemPackageRemove'] },
+
+	{ pattern: /\bchmod\s+(?:-R\s+)?(?:[0-7]{3,4}|[ugoa]*=?[rwx]+)\s+\/\s*$/,
+	  level: 'high', category: 'privilegedPermission', reasons: ['chmodRoot'] },
+	{ pattern: /\bchmod\s+-R\s+(?:\d*[2367]\d{0,2}|[ugoa]*\+[rwx]*w[rwx]*)\b/,
+	  level: 'medium', category: 'privilegedPermission', reasons: ['chmodRecursivePermissive'] },
+	{ pattern: /\bchown\s+-R\s+\S+\s+\/\s*$/,
+	  level: 'high', category: 'privilegedPermission', reasons: ['chownRoot'] },
+
+	{ pattern: /\b(?:curl|wget)\b[^|;&]*\|\s*(?:sudo\s+)?(?:sh|bash|zsh|fish|dash|ksh)\b/,
+	  level: 'high', category: 'remoteCodeExecution', reasons: ['pipeRemoteToShell'] },
+	{ pattern: /\b(?:iex|Invoke-Expression)\b[^|;&]*(?:iwr|Invoke-WebRequest|New-Object\s+Net\.WebClient|DownloadString)/i,
+	  level: 'high', category: 'remoteCodeExecution', reasons: ['pipeRemoteToShell'] },
+];
+
+function normalize(cmd) {
+	return cmd.replace(/\s+/g, ' ').trim();
+}
+
+function detectCommandRisk(cmd) {
+	if (!cmd) { return undefined; }
+	const normalized = normalize(cmd);
+	if (!normalized) { return undefined; }
+	for (const rule of rules) {
+		const m = rule.pattern.exec(normalized);
+		if (m) {
+			return { level: rule.level, category: rule.category, matched: m[0], reasons: rule.reasons };
+		}
+	}
+	return undefined;
+}
+
+const categoryLabel = {
+	destructiveFilesystem: 'recursive force-delete of files',
+	destructiveGit: 'destructive git operation',
+	destructiveContainer: 'destructive container or orchestrator operation',
+	destructivePackage: 'destructive package manager operation',
+	destructiveDisk: 'raw disk write or filesystem format',
+	privilegedPermission: 'broadly-scoped permission change',
+	remoteCodeExecution: 'piping remote content directly into a shell',
+	forkBomb: 'fork bomb',
+};
+
+// ---------------------------------------------------------------------------
+// UI
+// ---------------------------------------------------------------------------
+
+const presets = [
+	{ label: 'rm -rf /tmp', cmd: 'rm -rf /tmp/build', danger: true },
+	{ label: 'git reset --hard', cmd: 'git reset --hard HEAD~3', danger: true },
+	{ label: 'docker system prune', cmd: 'docker system prune -af --volumes', danger: true },
+	{ label: 'dd of=/dev/sda', cmd: 'dd if=/dev/zero of=/dev/sda bs=1M', danger: true },
+	{ label: 'curl | sh', cmd: 'curl -sSL https://example.com/install.sh | sh', danger: true },
+	{ label: 'git push --force', cmd: 'git push --force origin main', danger: true },
+	{ label: 'chmod -R 777', cmd: 'chmod -R 777 .', danger: true },
+	{ label: 'fork bomb', cmd: ':(){ :|:& };:', danger: true },
+	{ label: 'ls -la (safe)', cmd: 'ls -la', danger: false },
+	{ label: 'npm install (safe)', cmd: 'npm install typescript', danger: false },
+	{ label: 'git push (safe)', cmd: 'git push origin main', danger: false },
+	{ label: 'git reset --soft (safe)', cmd: 'git reset --soft HEAD~1', danger: false },
+	{ label: 'chmod 644 (safe)', cmd: 'chmod 644 index.js', danger: false },
+	{ label: 'curl -o file (safe)', cmd: 'curl -o install.sh https://example.com/install.sh', danger: false },
+];
+
+const presetsEl = document.getElementById('presets');
+for (const p of presets) {
+	const btn = document.createElement('button');
+	btn.className = 'preset ' + (p.danger ? 'danger' : 'safe');
+	btn.textContent = p.label;
+	btn.addEventListener('click', () => {
+		document.getElementById('cmd').value = p.cmd;
+	});
+	presetsEl.appendChild(btn);
+}
+
+document.getElementById('run').addEventListener('click', () => {
+	const cmd = document.getElementById('cmd').value;
+	const out = document.getElementById('out');
+	const risk = detectCommandRisk(cmd);
+	if (!risk) {
+		out.innerHTML = `
+			<div class="dialog">
+				<div class="dialog-header safe">
+					<div class="icon">✓</div>
+					<div class="title">Command executes normally</div>
+				</div>
+				<div class="dialog-body">No destructive pattern matched.
+The command would be forwarded to the terminal process with no dialog interruption.
+<code>${escape(cmd)}</code></div>
+			</div>`;
+		return;
+	}
+	const levelIcon = risk.level === 'high' ? '⚠' : '?';
+	const title = risk.level === 'high'
+		? 'Run potentially destructive command?'
+		: 'Run potentially destructive command?';
+	const lead = risk.level === 'high'
+		? `High risk: ${categoryLabel[risk.category]}`
+		: `Potentially destructive: ${categoryLabel[risk.category]}`;
+	out.innerHTML = `
+		<div class="dialog">
+			<div class="dialog-header ${risk.level}">
+				<div class="icon">${levelIcon}</div>
+				<div class="title">${title}</div>
+			</div>
+			<div class="dialog-body">${lead}
+
+Command:
+<code>${escape(cmd.replace(/\r?\n/g, ' ').trim())}</code>
+<div class="reasons">matched: <span>${escape(risk.matched)}</span> · reasons: ${risk.reasons.map(r => `<span>${escape(r)}</span>`).join(' ')}</div></div>
+			<div class="dialog-footer">
+				<button class="secondary" onclick="this.closest('.dialog').outerHTML='<div style=\\'color:var(--muted);padding:12px;\\'>Cancelled. Command was dropped silently — no events fired, no process write.</div>'">Cancel</button>
+				<button class="primary" onclick="this.closest('.dialog').outerHTML='<div style=\\'color:var(--ok);padding:12px;\\'>✓ User approved. Command would be forwarded to the terminal process.</div>'">Run Command</button>
+			</div>
+		</div>`;
+});
+
+function escape(s) {
+	return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Fire once on load with the default value
+document.getElementById('run').click();
+</script>
+</body>
+</html>

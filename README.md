@@ -21,6 +21,17 @@ Both tracks are fully self-contained, fully pushed, and can be evaluated in isol
 
 ---
 
+## See it run in 10 seconds (no setup)
+
+Two self-contained HTML demos live in [`demo/`](./demo). Open either file in a browser:
+
+- [**`demo/track1-terminal-risk-preview.html`**](./demo/track1-terminal-risk-preview.html) — the real command-risk detector ported to browser JS, with a VS Code-styled confirmation dialog. Type any command, or click a preset, to see the behavior exactly as it fires inside the terminal.
+- [**`demo/track2-impactflow.html`**](./demo/track2-impactflow.html) — a full interactive Cytoscape graph of a sample impact analysis with real ImpactFlow styling, sized and colored the same way the extension does it.
+
+To see the features running inside actual VS Code (not demos), see [*Running the code locally*](#running-the-code-locally) below.
+
+---
+
 ## Track 1 — Terminal Command Risk Preview
 
 > A lightweight, opt-in safety net for the VS Code integrated terminal.
