@@ -360,27 +360,13 @@ export class CopilotPrototypeShellCoinStatusBarContribution extends Disposable i
 		}
 
 		const title = localize('resetNotificationTitle', "Copilot is available. Start building.");
-		const body = localize('resetNotificationBody', "Your {0} has reset. Happy coding.", limitType);
+		const body = localize('resetNotificationBody', "The {0} has reset. Happy coding.", limitType);
 
 		// Fire OS notification via host service
 		const cts = new CancellationTokenSource();
 		this.hostService.showToast({ title, body }, cts.token);
 		// Auto-dispose after 30s so we don't leak
 		setTimeout(() => cts.dispose(true), 30000);
-	}
-
-	private _getMonthlyResetLabel(): string {
-		const d = new Date();
-		d.setMonth(d.getMonth() + 1);
-		const month = d.toLocaleString('en-US', { month: 'short' });
-		return `Resets ${month} ${d.getDate()} at 10:00 AM`;
-	}
-
-	private _getWeeklyResetLabel(): string {
-		const d = new Date();
-		d.setDate(d.getDate() + 7);
-		const month = d.toLocaleString('en-US', { month: 'short' });
-		return `Resets ${month} ${d.getDate()} at 10:00 AM`;
 	}
 
 	private getBannerMessage(state: string): string | undefined {
@@ -390,7 +376,7 @@ export class CopilotPrototypeShellCoinStatusBarContribution extends Disposable i
 		if (isEnterprise) {
 			switch (state) {
 				case 'Overage Approached':
-					return `You've used most of your included credits. It ${this._getMonthlyResetLabel().toLowerCase()}. Contact your administrator for more information.`;
+					return localize('bannerEntMonthlyApproach', "75% of included credits used. Resets May 1 at 10:00 AM. Contact an administrator for more information.");
 				default:
 					return undefined;
 			}
@@ -400,11 +386,11 @@ export class CopilotPrototypeShellCoinStatusBarContribution extends Disposable i
 			case 'Session Approached':
 				if (hasOverage) {
 					if (this._limitedOverageView) {
-						return localize('bannerSessionApproachLimited', "You're approaching your Five-Hour Limit. Additional budget will apply once it's reached.");
+						return localize('bannerSessionApproachLimited', "75% of Five-Hour Limit used. Additional budget applies once reached.");
 					}
-					return localize('bannerSessionApproachOverageInfo', "You're approaching your Five-Hour Limit. Additional budget will be used once it's reached.");
+					return localize('bannerSessionApproachOverageInfo', "75% of Five-Hour Limit used. Additional budget will be used once reached.");
 				}
-				return localize('bannerSessionApproach', "You've used most of your Five-Hour Limit. It resets at 10:00 AM.");
+				return localize('bannerSessionApproach', "75% of Five-Hour Limit used. Resets at 10:00 AM.");
 			case 'Session Reached':
 				if (hasOverage) {
 					if (this._limitedOverageView) {
@@ -416,11 +402,11 @@ export class CopilotPrototypeShellCoinStatusBarContribution extends Disposable i
 			case 'Weekly Approached':
 				if (hasOverage) {
 					if (this._limitedOverageView) {
-						return localize('bannerWeeklyApproachLimited', "You're approaching your Weekly Limit. Additional budget will apply once it's reached.");
+						return localize('bannerWeeklyApproachLimited', "75% of Weekly Limit used. Additional budget applies once reached.");
 					}
-					return localize('bannerWeeklyApproachOverageInfo', "You're approaching your Weekly Limit. Additional budget will be used once it's reached.");
+					return localize('bannerWeeklyApproachOverageInfo', "75% of Weekly Limit used. Additional budget will be used once reached.");
 				}
-				return `You've used most of your Weekly Limit. It ${this._getWeeklyResetLabel().toLowerCase()}.`;
+				return localize('bannerWeeklyApproach', "75% of Weekly Limit used. Resets April 6 at 10:00 AM.");
 			case 'Weekly Reached':
 				if (hasOverage) {
 					if (this._limitedOverageView) {
@@ -433,7 +419,7 @@ export class CopilotPrototypeShellCoinStatusBarContribution extends Disposable i
 				if (this._limitedOverageView) {
 					return localize('bannerOverageApproachLimited', "Using additional budget. Usage resumes when limits reset.");
 				}
-				return localize('bannerOverageApproach', "You've used most of your additional budget. Usage resumes when limits reset.");
+				return localize('bannerOverageApproach', "75% of additional budget used. Usage resumes when limits reset.");
 			default:
 				return undefined;
 		}
@@ -508,16 +494,16 @@ export class CopilotPrototypeShellCoinStatusBarContribution extends Disposable i
 		const topRow = mainWindow.document.createElement('div');
 		topRow.className = 'copilot-prototype-chat-banner-top';
 
-		const icon = mainWindow.document.createElement('span');
-		icon.className = 'copilot-prototype-chat-banner-icon';
-		if (isInfoBanner) {
-			icon.append(...renderLabelWithIcons('$(info)'));
-		} else if (gaugeInfo?.severity === 'error') {
-			icon.append(...renderLabelWithIcons('$(error)'));
-		} else {
-			icon.append(...renderLabelWithIcons('$(warning)'));
+		if (!isInfoBanner) {
+			const icon = mainWindow.document.createElement('span');
+			icon.className = 'copilot-prototype-chat-banner-icon';
+			if (gaugeInfo?.severity === 'error') {
+				icon.append(...renderLabelWithIcons('$(error)'));
+			} else {
+				icon.append(...renderLabelWithIcons('$(warning)'));
+			}
+			topRow.appendChild(icon);
 		}
-		topRow.appendChild(icon);
 
 		if (gaugeInfo) {
 			const titleText = mainWindow.document.createElement('span');
@@ -591,12 +577,6 @@ export class CopilotPrototypeShellCoinStatusBarContribution extends Disposable i
 			const actionsRow = mainWindow.document.createElement('div');
 			actionsRow.className = 'copilot-prototype-chat-banner-actions';
 
-			const viewUsageLink = mainWindow.document.createElement('button');
-			viewUsageLink.className = 'copilot-prototype-chat-banner-btn';
-			viewUsageLink.textContent = localize('viewUsage', "View Usage");
-			viewUsageLink.addEventListener('click', () => this.openDashboard());
-			actionsRow.appendChild(viewUsageLink);
-
 			const ctaButton = mainWindow.document.createElement('button');
 			ctaButton.className = 'copilot-prototype-chat-banner-btn primary';
 			if (this._activeSku === 'Free') {
@@ -655,13 +635,13 @@ export class CopilotPrototypeShellCoinStatusBarContribution extends Disposable i
 	} {
 		const plan: Record<string, { monthly: number; overage: number }> = {
 			'Edu/Free': { monthly: 300, overage: 0 },
-			'Pro/Pro+ No O': { monthly: 1500, overage: 0 },
-			'Pro/Pro+': { monthly: 7000, overage: 2000 },
-			'Max': { monthly: 20000, overage: 5000 },
-			'Ent/Bus ULB': { monthly: 5000, overage: 0 },
+			'Pro/Pro+ No O': { monthly: 1000, overage: 0 },
+			'Pro/Pro+': { monthly: 1500, overage: 500 },
+			'Max': { monthly: 5000, overage: 1000 },
+			'Ent/Bus ULB': { monthly: 2000, overage: 0 },
 			'Ent/Bus': { monthly: 0, overage: 0 },
 		};
-		const entry = plan[sku] ?? { monthly: 1500, overage: 0 };
+		const entry = plan[sku] ?? { monthly: 1000, overage: 0 };
 		let monthlyPct = 42;
 		let overageUsed = 0;
 		switch (state) {
@@ -693,7 +673,7 @@ export class CopilotPrototypeShellCoinStatusBarContribution extends Disposable i
 		const hasOverage = this._activeSku === 'Pro/Pro+' || this._activeSku === 'Max';
 
 		if (isEnterprise && state === 'Overage Approached') {
-			return { label: localize('gaugeMonthlyLimit', "Credits"), percentLabel: localize('gaugeUsed75Lc', "75% used"), percent: 75, severity: 'warning', resetLabel: this._getMonthlyResetLabel() };
+			return { label: localize('gaugeMonthlyLimit', "Credits"), percentLabel: localize('gaugeUsed75Lc', "75% used"), percent: 75, severity: 'warning', resetLabel: localize('resetsOnMay1', "Resets May 1 at 10:00 AM") };
 		}
 
 		// For SKUs with overage, approached = info with hint, reached = info with "using additional budget"
@@ -704,7 +684,7 @@ export class CopilotPrototypeShellCoinStatusBarContribution extends Disposable i
 				case 'Session Reached':
 					return { label: localize('gaugeFiveHourLimit', "Five-Hour Limit"), percentLabel: localize('gaugeUsed100Lc', "100% used"), percent: 100, severity: 'info', resetLabel: localize('nowUsingOverageBudget', "Now using additional budget") };
 				case 'Weekly Approached':
-					return { label: localize('gaugeWeeklyLimit', "Weekly Limit"), percentLabel: localize('gaugeUsed75Lc', "75% used"), percent: 75, severity: 'info', resetLabel: this._getWeeklyResetLabel() };
+					return { label: localize('gaugeWeeklyLimit', "Weekly Limit"), percentLabel: localize('gaugeUsed75Lc', "75% used"), percent: 75, severity: 'info', resetLabel: localize('resetsOnApr6', "Resets April 6 at 10:00 AM") };
 				case 'Weekly Reached':
 					return { label: localize('gaugeWeeklyLimit', "Weekly Limit"), percentLabel: localize('gaugeUsed100Lc', "100% used"), percent: 100, severity: 'info', resetLabel: localize('nowUsingOverageBudget', "Now using additional budget") };
 			}
@@ -716,9 +696,9 @@ export class CopilotPrototypeShellCoinStatusBarContribution extends Disposable i
 			case 'Session Reached':
 				return { label: localize('gaugeFiveHourLimit', "Five-Hour Limit"), percentLabel: localize('gaugeUsed100Lc', "100% used"), percent: 100, severity: 'error', resetLabel: localize('resetsAt10am', "Resets at 10:00 AM") };
 			case 'Weekly Approached':
-				return { label: localize('gaugeWeeklyLimit', "Weekly Limit"), percentLabel: localize('gaugeUsed75Lc', "75% used"), percent: 75, severity: 'warning', resetLabel: this._getWeeklyResetLabel() };
+				return { label: localize('gaugeWeeklyLimit', "Weekly Limit"), percentLabel: localize('gaugeUsed75Lc', "75% used"), percent: 75, severity: 'warning', resetLabel: localize('resetsOnApr6', "Resets April 6 at 10:00 AM") };
 			case 'Weekly Reached':
-				return { label: localize('gaugeWeeklyLimit', "Weekly Limit"), percentLabel: localize('gaugeUsed100Lc', "100% used"), percent: 100, severity: 'error', resetLabel: this._getWeeklyResetLabel() };
+				return { label: localize('gaugeWeeklyLimit', "Weekly Limit"), percentLabel: localize('gaugeUsed100Lc', "100% used"), percent: 100, severity: 'error', resetLabel: localize('resetsOnApr6', "Resets April 6 at 10:00 AM") };
 			case 'Overage Approached':
 				if (this._limitedOverageView) {
 					return undefined; // No overage % available in limited view
@@ -765,10 +745,12 @@ export class CopilotPrototypeShellCoinStatusBarContribution extends Disposable i
 		// Single row: icon + title + description + actions + dismiss
 		const row = mainWindow.document.createElement('div');
 		row.className = 'copilot-prototype-chat-banner-single-row';
-		const icon = mainWindow.document.createElement('span');
-		icon.className = 'copilot-prototype-chat-banner-icon';
-		icon.append(...renderLabelWithIcons(opts.severity === 'error' ? '$(error)' : opts.severity === 'warning' ? '$(warning)' : '$(info)'));
-		row.appendChild(icon);
+		if (opts.severity === 'error' || opts.severity === 'warning') {
+			const icon = mainWindow.document.createElement('span');
+			icon.className = 'copilot-prototype-chat-banner-icon';
+			icon.append(...renderLabelWithIcons(opts.severity === 'error' ? '$(error)' : '$(warning)'));
+			row.appendChild(icon);
+		}
 		const titleText = mainWindow.document.createElement('span');
 		titleText.className = 'copilot-prototype-chat-banner-title';
 		titleText.textContent = opts.title;
@@ -782,7 +764,12 @@ export class CopilotPrototypeShellCoinStatusBarContribution extends Disposable i
 		if (opts.actions && opts.actions.length > 0) {
 			const actionsContainer = mainWindow.document.createElement('div');
 			actionsContainer.className = 'copilot-prototype-chat-banner-actions';
+			const hasPrimaryAction = opts.actions.some(a => a.primary);
 			for (const action of opts.actions) {
+				// Skip "View Usage" when a primary CTA button is present
+				if (hasPrimaryAction && !action.primary && action.label === localize('viewUsage', "View Usage")) {
+					continue;
+				}
 				const btn = mainWindow.document.createElement('button');
 				btn.className = action.primary
 					? 'copilot-prototype-chat-banner-btn primary'
@@ -809,7 +796,7 @@ export class CopilotPrototypeShellCoinStatusBarContribution extends Disposable i
 		this.setChatInputOverlap(true);
 	}
 
-	showCustomSimpleBanner(opts: { title: string; description?: string; actionLabel?: string }): void {
+	showCustomSimpleBanner(opts: { title: string; description?: string }): void {
 		this.clearBanner();
 		const protoContainer = this.getOrCreatePrototypeContainer();
 		if (!protoContainer) { return; }
@@ -820,10 +807,6 @@ export class CopilotPrototypeShellCoinStatusBarContribution extends Disposable i
 		// Single row: icon + title + description + actions + dismiss
 		const row = mainWindow.document.createElement('div');
 		row.className = 'copilot-prototype-chat-banner-single-row';
-		const icon = mainWindow.document.createElement('span');
-		icon.className = 'copilot-prototype-chat-banner-icon';
-		icon.append(...renderLabelWithIcons('$(info)'));
-		row.appendChild(icon);
 		const titleText = mainWindow.document.createElement('span');
 		titleText.className = 'copilot-prototype-chat-banner-title';
 		titleText.textContent = opts.title;
@@ -834,14 +817,6 @@ export class CopilotPrototypeShellCoinStatusBarContribution extends Disposable i
 			descText.textContent = opts.description;
 			row.appendChild(descText);
 		}
-		const actionsRow = mainWindow.document.createElement('div');
-		actionsRow.className = 'copilot-prototype-chat-banner-actions';
-		const viewUsageBtn = mainWindow.document.createElement('button');
-		viewUsageBtn.className = 'copilot-prototype-chat-banner-btn';
-		viewUsageBtn.textContent = opts.actionLabel ?? localize('viewUsage', "View Usage");
-		viewUsageBtn.addEventListener('click', () => this.openDashboard());
-		actionsRow.appendChild(viewUsageBtn);
-		row.appendChild(actionsRow);
 		const dismiss = mainWindow.document.createElement('span');
 		dismiss.className = 'copilot-prototype-chat-banner-dismiss';
 		dismiss.append(...renderLabelWithIcons('$(close)'));
@@ -1009,7 +984,7 @@ export class CopilotPrototypeShellCoinStatusBarContribution extends Disposable i
 		if (isEnterprise && state === 'Overage Reached') {
 			return {
 				title: localize('inlineEntMonthlyReachedTitle', "You've reached your included credits."),
-				description: `Copilot is paused until your limit ${this._getMonthlyResetLabel().toLowerCase()}.`,
+				description: localize('inlineEntMonthlyReachedDesc', "Copilot is paused until your limit resets May 1 at 10:00 AM."),
 				buttonLabel: localize('requestMoreUsage', "Request More Usage"),
 			};
 		}
@@ -1047,7 +1022,7 @@ export class CopilotPrototypeShellCoinStatusBarContribution extends Disposable i
 			if (sku === 'Edu/Free') {
 				return {
 					title: localize('inlineWeeklyReachedTitle', "You've reached your Weekly Limit."),
-					description: `${this._getWeeklyResetLabel()}, or upgrade to increase your limits.`,
+					description: localize('inlineWeeklyReachedDescFree', "Resets April 6 at 10:00 AM, or upgrade to increase your limits."),
 					buttonLabel: localize('upgrade', "Upgrade"),
 				};
 			}
@@ -1061,13 +1036,13 @@ export class CopilotPrototypeShellCoinStatusBarContribution extends Disposable i
 				}
 				return {
 					title: localize('inlineWeeklyReachedTitle', "You've reached your Weekly Limit."),
-					description: `${this._getWeeklyResetLabel()}. Set up an additional budget to continue.`,
+					description: localize('inlineWeeklyReachedDescProNoO', "Resets April 6 at 10:00 AM. Set up an additional budget to continue."),
 					buttonLabel: localize('configureBudgetBtn', "Configure Budget"),
 				};
 			}
 			return {
 				title: localize('inlineWeeklyReachedTitle', "You've reached your Weekly Limit."),
-				description: `${this._getWeeklyResetLabel()}. Increase your budget to continue using premium models.`,
+				description: localize('inlineWeeklyReachedDescPro', "Resets April 6 at 10:00 AM. Increase your budget to continue using premium models."),
 				buttonLabel: localize('increaseBudget', "Increase Budget"),
 			};
 		}
@@ -1385,7 +1360,7 @@ export class CopilotPrototypeShellCoinStatusBarContribution extends Disposable i
 			return [
 				{
 					title: localize('ftEntMonthlyTitle', "Included credits"),
-					description: localize('ftEntMonthlyDesc', "Your organization sets a monthly usage limit for AI credits. Usage resets at the start of each billing cycle. Copilot pauses when you reach a limit."),
+					description: localize('ftEntMonthlyDesc', "The organization sets a monthly usage limit for AI credits. Usage resets at the start of each billing cycle. Copilot pauses when a limit is reached."),
 				},
 				{
 					title: localize('ftEntInlineTitle', "Inline suggestions"),
@@ -1594,7 +1569,7 @@ export class CopilotPrototypeShellCoinStatusBarContribution extends Disposable i
 		const weeklyPct = weeklyApproached ? 75 : (weeklyReached || state === 'Session Reached') ? 100 : (state === 'Weekly Reset') ? 0 : 56;
 		this.createCard(cards, {
 			name: localize('cardWeekly', "Weekly Limit"),
-			resetLabel: this._getWeeklyResetLabel(),
+			resetLabel: localize('cardResetApr6', "Resets April 6 at 10:00 AM"),
 			percent: weeklyPct,
 			severity: weeklyApproached ? 'warning' : undefined,
 			highlight: weeklyApproached,
@@ -1696,7 +1671,7 @@ export class CopilotPrototypeShellCoinStatusBarContribution extends Disposable i
 		const weeklyHighlight = state === 'Weekly Approached';
 		this.createCard(cards, {
 			name: localize('cardWeekly', "Weekly Limit"),
-			resetLabel: this._getWeeklyResetLabel(),
+			resetLabel: localize('cardResetApr6', "Resets April 6 at 10:00 AM"),
 			percent: weeklyPct,
 			severity: weeklyHighlight ? 'info' : undefined,
 			highlight: weeklyHighlight,
@@ -1711,7 +1686,7 @@ export class CopilotPrototypeShellCoinStatusBarContribution extends Disposable i
 		const overageStatusBadge = isOverageInUse ? localize('badgeInUse', "In use") : localize('badgeNotInUse', "Not in use");
 		this.createCard(cards, {
 			name: localize('cardRunover', "Additional Budget"),
-			resetLabel: this._getMonthlyResetLabel(),
+			resetLabel: localize('cardResetMay1', "Resets May 1 at 10:00 AM"),
 			percent: overagePct,
 			severity: overageSev,
 			disabled: !isOverageInUse && !isResetState,
@@ -1815,7 +1790,7 @@ export class CopilotPrototypeShellCoinStatusBarContribution extends Disposable i
 		const weeklyDisabled = state === 'Weekly Reached' || state === 'Session Reached' || isOverageState;
 		this.createCard(cards, {
 			name: localize('cardWeekly', "Weekly Limit"),
-			resetLabel: this._getWeeklyResetLabel(),
+			resetLabel: localize('cardResetApr6', "Resets April 6 at 10:00 AM"),
 			percent: weeklyPct,
 			severity: weeklyHighlight ? 'info' : undefined,
 			highlight: weeklyHighlight,
@@ -1952,7 +1927,7 @@ export class CopilotPrototypeShellCoinStatusBarContribution extends Disposable i
 			const monthlyPct = monthlyApproached ? 75 : monthlyReached ? 100 : (_state === 'Overage Reset') ? 0 : 56;
 			this.createCard(cards, {
 				name: localize('cardMonthlyLimit', "Credits"),
-				resetLabel: this._getMonthlyResetLabel(),
+				resetLabel: localize('cardResetMay1Monthly', "Resets May 1 at 10:00 AM"),
 				percent: monthlyPct,
 				severity: monthlyApproached ? 'warning' as const : undefined,
 				highlight: monthlyApproached,
@@ -2224,9 +2199,9 @@ export class CopilotCurrentModelStatusBarContribution extends Disposable impleme
 	private getBannerMessage(state: string): string | undefined {
 		switch (state) {
 			case 'Premium Approached':
-				return `You've used most of your premium request allowance. It ${this._getMonthlyResetLabel().toLowerCase()}.`;
+				return localize('cmBannerPremiumApproach', "75% of premium request allowance used. Resets May 1 at 10:00 AM.");
 			case 'Chat Approached':
-				return `You've used most of your chat message allowance. It ${this._getMonthlyResetLabel().toLowerCase()}.`;
+				return localize('cmBannerChatApproach', "75% of chat message allowance used. Resets May 1 at 10:00 AM.");
 			default:
 				return undefined;
 		}
@@ -2235,13 +2210,13 @@ export class CopilotCurrentModelStatusBarContribution extends Disposable impleme
 	private getBannerGaugeInfo(state: string): { label: string; percentLabel: string; percent: number; severity: string; resetLabel: string } | undefined {
 		switch (state) {
 			case 'Premium Approached':
-				return { label: localize('cmGaugePremium', "Premium Requests"), percentLabel: localize('gaugeUsed75Lc', "75% used"), percent: 75, severity: 'warning', resetLabel: this._getMonthlyResetLabel() };
+				return { label: localize('cmGaugePremium', "Premium Requests"), percentLabel: localize('gaugeUsed75Lc', "75% used"), percent: 75, severity: 'warning', resetLabel: localize('resetsOnMay1', "Resets May 1 at 10:00 AM") };
 			case 'Premium Exhausted':
-				return { label: localize('cmGaugePremium', "Premium Requests"), percentLabel: localize('gaugeUsed100Lc', "100% used"), percent: 100, severity: 'error', resetLabel: this._getMonthlyResetLabel() };
+				return { label: localize('cmGaugePremium', "Premium Requests"), percentLabel: localize('gaugeUsed100Lc', "100% used"), percent: 100, severity: 'error', resetLabel: localize('resetsOnMay1', "Resets May 1 at 10:00 AM") };
 			case 'Chat Approached':
-				return { label: localize('cmGaugeChat', "Chat Messages"), percentLabel: localize('gaugeUsed75Lc', "75% used"), percent: 75, severity: 'warning', resetLabel: this._getMonthlyResetLabel() };
+				return { label: localize('cmGaugeChat', "Chat Messages"), percentLabel: localize('gaugeUsed75Lc', "75% used"), percent: 75, severity: 'warning', resetLabel: localize('resetsOnMay1', "Resets May 1 at 10:00 AM") };
 			case 'Chat Exhausted':
-				return { label: localize('cmGaugeChat', "Chat Messages"), percentLabel: localize('gaugeUsed100Lc', "100% used"), percent: 100, severity: 'error', resetLabel: this._getMonthlyResetLabel() };
+				return { label: localize('cmGaugeChat', "Chat Messages"), percentLabel: localize('gaugeUsed100Lc', "100% used"), percent: 100, severity: 'error', resetLabel: localize('resetsOnMay1', "Resets May 1 at 10:00 AM") };
 			default:
 				return undefined;
 		}
@@ -2292,11 +2267,13 @@ export class CopilotCurrentModelStatusBarContribution extends Disposable impleme
 		const topRow = mainWindow.document.createElement('div');
 		topRow.className = 'copilot-prototype-chat-banner-top';
 
-		const icon = mainWindow.document.createElement('span');
-		icon.className = 'copilot-prototype-chat-banner-icon';
-		if (gaugeInfo?.severity === 'error') { icon.append(...renderLabelWithIcons('$(error)')); }
-		else { icon.append(...renderLabelWithIcons('$(warning)')); }
-		topRow.appendChild(icon);
+		if (gaugeInfo?.severity === 'error' || gaugeInfo?.severity === 'warning') {
+			const icon = mainWindow.document.createElement('span');
+			icon.className = 'copilot-prototype-chat-banner-icon';
+			if (gaugeInfo?.severity === 'error') { icon.append(...renderLabelWithIcons('$(error)')); }
+			else { icon.append(...renderLabelWithIcons('$(warning)')); }
+			topRow.appendChild(icon);
+		}
 
 		if (gaugeInfo) {
 			const titleText = mainWindow.document.createElement('span');
@@ -2332,11 +2309,6 @@ export class CopilotCurrentModelStatusBarContribution extends Disposable impleme
 			resetBadge.textContent = gaugeInfo.resetLabel;
 			bottomRow.appendChild(resetBadge);
 		}
-		const viewUsageLink = mainWindow.document.createElement('button');
-		viewUsageLink.className = 'copilot-prototype-chat-banner-btn';
-		viewUsageLink.textContent = localize('viewUsage', "View Usage");
-		viewUsageLink.addEventListener('click', () => this.openDashboard());
-		bottomRow.appendChild(viewUsageLink);
 		this._bannerElement.appendChild(bottomRow);
 
 		if (!this._bannerElement.parentElement) {
@@ -2438,20 +2410,20 @@ export class CopilotCurrentModelStatusBarContribution extends Disposable impleme
 			if (sku === 'Free') {
 				return {
 					title: localize('cmWarnPremiumTitle', "You've reached your premium request limit."),
-					description: `${this._getMonthlyResetLabel()}, or upgrade to increase your limits.`,
+					description: localize('cmWarnPremiumDescFree', "Resets May 1 at 10:00 AM, or upgrade to increase your limits."),
 					buttonLabel: localize('upgrade', "Upgrade"),
 				};
 			}
 			return {
 				title: localize('cmWarnPremiumTitle', "You've reached your premium request limit."),
-				description: `${this._getMonthlyResetLabel()}, or purchase additional premium requests.`,
+				description: localize('cmWarnPremiumDescPro', "Resets May 1 at 10:00 AM, or purchase additional premium requests."),
 				buttonLabel: localize('managePremium', "Manage paid premium requests"),
 			};
 		}
 		if (state === 'Chat Exhausted') {
 			return {
 				title: localize('cmWarnChatTitle', "You've reached your chat message limit."),
-				description: `${this._getMonthlyResetLabel()}, or upgrade to increase your limits.`,
+				description: localize('cmWarnChatDescFree', "Resets May 1 at 10:00 AM, or upgrade to increase your limits."),
 				buttonLabel: localize('upgrade', "Upgrade"),
 			};
 		}
@@ -2541,7 +2513,7 @@ export class CopilotCurrentModelStatusBarContribution extends Disposable impleme
 		const premiumSev = premiumApproached ? 'warning' as const : premiumExhausted ? 'error' as const : undefined;
 		this.createCard(cards, {
 			name: localize('cmCardPremium', "Premium Requests"),
-			resetLabel: this._getMonthlyResetLabel(),
+			resetLabel: localize('cmResetMay1', "Resets May 1 at 10:00 AM"),
 			percent: premiumPct,
 			severity: premiumSev,
 			highlight: premiumApproached || premiumExhausted,
@@ -2557,7 +2529,7 @@ export class CopilotCurrentModelStatusBarContribution extends Disposable impleme
 			const chatSev = chatApproached ? 'warning' as const : chatExhausted ? 'error' as const : undefined;
 			this.createCard(cards, {
 				name: localize('cmCardChat', "Chat Messages"),
-				resetLabel: this._getMonthlyResetLabel(),
+				resetLabel: localize('cmResetMay1', "Resets May 1 at 10:00 AM"),
 				percent: chatPct,
 				severity: chatSev,
 				highlight: chatApproached || chatExhausted,
@@ -2925,14 +2897,13 @@ export class CopilotTBB3StatusBarContribution extends Disposable implements IWor
 	private _resumed = false;
 	private _autoAdvanceStates: string[] | undefined;
 	private _autoAdvanceIndex = 0;
-	private _firstTimeStep = 1;
 
 	get activeSku(): string { return this._activeSku; }
 	get activeState(): string { return this._activeState; }
 
 	static readonly INDIVIDUAL_SKUS = ['Edu/Free', 'Pro/Pro+ No O', 'Pro/Pro+', 'Max'];
 	static readonly ENTERPRISE_SKUS = ['Ent/Bus ULB', 'Ent/Bus'];
-	static readonly STATES = ['First Time', 'Default', 'Monthly Approached', 'Monthly Exhausted', 'Monthly Reset', 'Overage Exhausted', 'Overage Reset'];
+	static readonly STATES = ['Default', 'Monthly Approached', 'Monthly Exhausted', 'Monthly Reset', 'Overage Exhausted', 'Overage Reset'];
 	static readonly EXCLUDED_CELLS: ReadonlySet<string> = new Set([
 		// Edu/Free has no additional budget at all
 		'Edu/Free|Overage Exhausted', 'Edu/Free|Overage Reset',
@@ -2952,20 +2923,6 @@ export class CopilotTBB3StatusBarContribution extends Disposable implements IWor
 	) {
 		super();
 		CopilotTBB3StatusBarContribution.instance = this;
-	}
-
-	private _getMonthlyResetLabel(): string {
-		const d = new Date();
-		d.setMonth(d.getMonth() + 1);
-		const month = d.toLocaleString('en-US', { month: 'short' });
-		return `Resets ${month} ${d.getDate()} at 10:00 AM`;
-	}
-
-	private _getWeeklyResetLabel(): string {
-		const d = new Date();
-		d.setDate(d.getDate() + 7);
-		const month = d.toLocaleString('en-US', { month: 'short' });
-		return `Resets ${month} ${d.getDate()} at 10:00 AM`;
 	}
 
 	private openDashboard(): void {
@@ -3018,16 +2975,12 @@ export class CopilotTBB3StatusBarContribution extends Disposable implements IWor
 		this._activeSku = sku;
 		this._activeState = state;
 		this._resumed = state === 'Monthly Reset';
-		if (state === 'First Time') {
-			this._firstTimeStep = 1;
-		}
 		// Ensure the shared status-bar dashboard reflects TBB 3.0 whenever the user
 		// interacts with this controller, otherwise a stale TBB 1 / Current Model
 		// dashboard (e.g. with Free's inline-suggestions card) could still show.
 		CopilotPrototypeShellCoinStatusBarContribution.instance?.setBillingMode('tbb-3.0');
 		this.updateSharedDashboard();
 		this.applyChatBanner();
-		this._previewUpdateCallback?.();
 	}
 
 	private applyChatBanner(): void {
@@ -3056,15 +3009,15 @@ export class CopilotTBB3StatusBarContribution extends Disposable implements IWor
 		switch (state) {
 			case 'Monthly Approached':
 				tbb1.showCustomGaugeBanner({
-					title: localize('tbb3MonthlyApproachingPct', "Credits at {0}%", 75),
+					title: localize('tbb3MonthlyApproachingPct', "{0}% of credits used", 75),
 					percent: 75,
 					severity: isEntULB ? 'warning' : 'celebrate',
 					description: isEntULB
-						? localize('tbb3BannerEntApproachShort', "Request more usage from your admin to keep flowing.")
+						? localize('tbb3BannerEntApproachShort', "Request more usage from an admin to keep going.")
 						: hasOverage
-							? localize('tbb3BannerHasOverageApproachShort', "Your additional budget is ready to keep things flowing.")
+							? localize('tbb3BannerHasOverageApproachShort', "Additional budget is ready to keep things flowing.")
 							: isFree
-								? localize('tbb3BannerFreeApproachShort', "You're getting the most out of Copilot. Upgrade to keep going.")
+								? localize('tbb3BannerFreeApproachShort', "Getting the most out of Copilot. Upgrade to keep going.")
 								: localize('tbb3BannerPaidApproachShort', "Configure overage spend to keep going."),
 					actions: isEntULB
 						? []
@@ -3077,14 +3030,14 @@ export class CopilotTBB3StatusBarContribution extends Disposable implements IWor
 				// Pro/Pro+ + Max only — monthly hit 100%, overage now in use
 				tbb1.showCustomSimpleBanner({
 					title: monthlyReachedTitle,
-					description: localize('tbb3BannerMonthlyReachedDesc', "Your additional budget will keep Copilot going."),
+					description: localize('tbb3BannerMonthlyReachedDesc', "Additional budget will keep Copilot going."),
 				});
 				break;
 			case 'Monthly Exhausted':
 				if (hasOverage) {
 					tbb1.showCustomSimpleBanner({
 						title: monthlyReachedTitle,
-						description: localize('tbb3BannerMonthlyExhaustedOverageDesc', "Your additional budget will keep Copilot going."),
+						description: localize('tbb3BannerMonthlyExhaustedOverageDesc', "Additional budget will keep Copilot going."),
 					});
 				} else {
 					tbb1.showCustomGaugeBanner({
@@ -3092,9 +3045,9 @@ export class CopilotTBB3StatusBarContribution extends Disposable implements IWor
 						percent: 100,
 						severity: isEntULB ? 'error' : 'celebrate',
 						description: isEntULB
-							? localize('tbb3BannerEntExhaustedShort', "Request more usage from your admin to pick up where you left off.")
+							? localize('tbb3BannerEntExhaustedShort', "Request more usage from an admin to pick up where you left off.")
 							: isFree
-								? localize('tbb3BannerFreeExhaustedShort', "You've made the most of Copilot Free. Upgrade to keep going.")
+								? localize('tbb3BannerFreeExhaustedShort', "Made the most of Copilot Free. Upgrade to keep going.")
 								: isProNoO
 									? localize('tbb3BannerProNoOExhaustedShort', "Configure overage spend to keep building.")
 									: localize('tbb3BannerPaidExhaustedShort', "Copilot will be back when limits reset."),
@@ -3111,7 +3064,7 @@ export class CopilotTBB3StatusBarContribution extends Disposable implements IWor
 					title: overageReachedTitle,
 					percent: 100,
 					severity: 'celebrate',
-					description: localize('tbb3BannerOverageExhaustedShort', "Increase your budget to keep building."),
+					description: localize('tbb3BannerOverageExhaustedShort', "Increase budget to keep building."),
 					actions: [viewUsageAction, manageBudgetAction],
 				});
 				break;
@@ -3119,13 +3072,7 @@ export class CopilotTBB3StatusBarContribution extends Disposable implements IWor
 			case 'Overage Reset':
 				tbb1.showCustomSimpleBanner({
 					title: localize('tbb3BannerResetTitle', "Credits Have Reset"),
-					description: localize('resetBannerDesc', "Copilot is available. Resume building."),
-				});
-				break;
-			case 'First Time':
-				tbb1.showCustomSimpleBanner({
-					title: localize('tbb3FtBannerTitle', "We've updated how Copilot billing works"),
-					actionLabel: localize('tbb3FtBannerAction', "See what's new"),
+					description: localize('resetBannerDesc', "Credits have reset. Resume building."),
 				});
 				break;
 			default:
@@ -3150,184 +3097,6 @@ export class CopilotTBB3StatusBarContribution extends Disposable implements IWor
 		this.setActiveCell(this._activeSku, this._autoAdvanceStates[this._autoAdvanceIndex]);
 	}
 
-	// ---- First Time Onboarding ----
-
-	private getFirstTimeSteps(sku: string): { icon: string; title: string; description: string; cta?: string }[] {
-		const isEnterprise = sku === 'Ent/Bus' || sku === 'Ent/Bus ULB';
-		const isFree = sku === 'Edu/Free';
-		const isNoO = sku === 'Pro/Pro+ No O';
-		const hasOverage = sku === 'Pro/Pro+' || sku === 'Max';
-
-		if (isEnterprise) {
-			return [
-				{
-					icon: '$(sparkle)',
-					title: localize('tbb3FtCreditsTitle', "What are credits?"),
-					description: localize('tbb3FtCreditsEntDesc', "Copilot now uses credits instead of request counts. Credits give you a single, simple balance that covers chat, completions, and agent use. Your organization sets a monthly credit allowance."),
-				},
-				{
-					icon: '$(layers)',
-					title: localize('tbb3FtModelsTitle', "Models cost differently"),
-					description: localize('tbb3FtModelsEntDesc', "Different models use credits at different rates. Smaller models like Haiku use fewer credits per request, while advanced models like Opus use more. The model picker shows relative cost so you can compare."),
-				},
-				{
-					icon: '$(graph-line)',
-					title: localize('tbb3FtDashboardTitle', "Track your usage"),
-					description: localize('tbb3FtDashboardEntDesc', "Your usage dashboard shows how many credits you've used and how many remain. Contact your administrator if you need a higher limit."),
-				},
-			];
-		}
-
-		const steps: { icon: string; title: string; description: string; cta?: string }[] = [];
-
-		steps.push({
-			icon: '$(sparkle)',
-			title: localize('tbb3FtCreditsTitle', "What are credits?"),
-			description: isFree
-				? localize('tbb3FtCreditsFreeDesc', "Copilot now uses credits instead of request counts. Credits give you a single balance that covers chat, completions, and agent use. Your plan includes 300 credits per month.")
-				: isNoO
-					? localize('tbb3FtCreditsProNoODesc', "Copilot now uses credits instead of request counts. Credits give you a single balance that covers chat, completions, and agent use. Your plan includes 1,500 credits per month.")
-					: hasOverage
-						? localize('tbb3FtCreditsProDesc', "Copilot now uses credits instead of request counts. Credits give you a single balance that covers chat, completions, and agent use. Your plan includes {0} credits per month.", sku === 'Max' ? '20,000' : '7,000')
-						: localize('tbb3FtCreditsDefaultDesc', "Copilot now uses credits instead of request counts. Credits give you a single balance that covers chat, completions, and agent use."),
-		});
-
-		steps.push({
-			icon: '$(layers)',
-			title: localize('tbb3FtModelsTitle', "Models cost differently"),
-			description: localize('tbb3FtModelsDesc', "Different models use credits at different rates. A quick question with Haiku might use a fraction of a credit, while a complex task with Opus could use several. Check the relative cost bar in the model picker to compare."),
-		});
-
-		if (isFree) {
-			steps.push({
-				icon: '$(calendar)',
-				title: localize('tbb3FtLimitsFreeTitle', "Your monthly balance"),
-				description: localize('tbb3FtLimitsFreeDesc', "Your credits reset each month. When you run out, Copilot pauses until your next cycle. Upgrade to Pro for more credits and the ability to set an additional budget."),
-				cta: localize('upgrade', "Upgrade"),
-			});
-		} else if (isNoO) {
-			steps.push({
-				icon: '$(credit-card)',
-				title: localize('tbb3FtBudgetNoOTitle', "Additional budget"),
-				description: localize('tbb3FtBudgetNoODesc', "When your included credits run out, Copilot pauses. Set up an additional budget to keep going \u2014 you only pay for what you use beyond your included amount."),
-				cta: localize('configureBudgetBtn', "Configure Budget"),
-			});
-		} else {
-			steps.push({
-				icon: '$(credit-card)',
-				title: localize('tbb3FtBudgetTitle', "Additional budget"),
-				description: localize('tbb3FtBudgetDesc', "When your included credits run out, your additional budget kicks in automatically. Set a spending cap to control costs \u2014 you only pay for what you use."),
-			});
-		}
-
-		return steps;
-	}
-
-	private renderFirstTimeOnboarding(dashboard: HTMLElement, disposables: DisposableStore, sku: string): void {
-		const contentContainer = append(dashboard, $('div.copilot-prototype-ft-container'));
-		const stepDisposables = disposables.add(new DisposableStore());
-
-		const renderStep = () => {
-			stepDisposables.clear();
-			contentContainer.textContent = '';
-
-			const steps = this.getFirstTimeSteps(sku);
-			const totalSteps = steps.length;
-			const currentStep = Math.min(this._firstTimeStep, totalSteps);
-			const stepData = steps[currentStep - 1];
-			const isLastStep = currentStep === totalSteps;
-			const isFirstStep = currentStep === 1;
-
-			// Header
-			const header = append(contentContainer, $('div.copilot-prototype-ft-header'));
-			const headerTitle = append(header, $('div.copilot-prototype-ft-header-title'));
-			headerTitle.textContent = localize('tbb3FtHeader', "What's New");
-			const headerStep = append(header, $('div.copilot-prototype-ft-header-step'));
-			headerStep.textContent = `${currentStep} of ${totalSteps}`;
-
-			// Body
-			const body = append(contentContainer, $('div.copilot-prototype-ft-body'));
-
-			const iconContainer = append(body, $('div.copilot-prototype-ft-card-icon'));
-			iconContainer.append(...renderLabelWithIcons(stepData.icon));
-
-			const cardTitle = append(body, $('div.copilot-prototype-ft-card-title'));
-			cardTitle.textContent = stepData.title;
-
-			const cardDesc = append(body, $('div.copilot-prototype-ft-card-desc'));
-			cardDesc.textContent = stepData.description;
-
-			if (isLastStep) {
-				const links = append(body, $('div.copilot-prototype-ft-links'));
-				const docsLink = append(links, $('a.copilot-prototype-ft-link'));
-				docsLink.textContent = localize('tbb3FtDocsLink', "Read the docs");
-				docsLink.href = 'https://docs.github.com/en/copilot/managing-copilot/managing-copilot-as-an-individual-subscriber/monitoring-usage-and-spend';
-				docsLink.target = '_blank';
-				docsLink.append(...renderLabelWithIcons(' $(link-external)'));
-
-				const faqLink = append(links, $('a.copilot-prototype-ft-link'));
-				faqLink.textContent = localize('tbb3FtFaqLink', "Billing FAQ");
-				faqLink.href = 'https://docs.github.com/en/copilot/about-github-copilot/github-copilot-plans';
-				faqLink.target = '_blank';
-				faqLink.append(...renderLabelWithIcons(' $(link-external)'));
-
-				const hintLine = append(body, $('div.copilot-prototype-ft-hint'));
-				hintLine.append(...renderLabelWithIcons(localize('tbb3FtHint', "Click $(sparkle) in the dashboard to see this again.")));
-			}
-
-			// Footer nav
-			const footer = append(contentContainer, $('div.copilot-prototype-ft-footer'));
-			const footerLeft = append(footer, $('div.copilot-prototype-ft-footer-left'));
-			const footerRight = append(footer, $('div.copilot-prototype-ft-footer-right'));
-
-			// Back arrow
-			const backBtn = mainWindow.document.createElement('button');
-			backBtn.className = 'copilot-prototype-ft-nav-btn' + (isFirstStep ? ' disabled' : '');
-			backBtn.append(...renderLabelWithIcons('$(chevron-left)'));
-			backBtn.title = localize('ftBack', "Back");
-			if (!isFirstStep) {
-				backBtn.addEventListener('click', () => {
-					this._firstTimeStep = currentStep - 1;
-					renderStep();
-				});
-			}
-			footerLeft.appendChild(backBtn);
-
-			// Next arrow
-			const nextArrow = mainWindow.document.createElement('button');
-			nextArrow.className = 'copilot-prototype-ft-nav-btn' + (isLastStep ? ' disabled' : '');
-			nextArrow.append(...renderLabelWithIcons('$(chevron-right)'));
-			nextArrow.title = localize('ftNext', "Next");
-			if (!isLastStep) {
-				nextArrow.addEventListener('click', () => {
-					this._firstTimeStep = currentStep + 1;
-					renderStep();
-				});
-			}
-			footerLeft.appendChild(nextArrow);
-
-			// Progress dots
-			const dots = append(footerLeft, $('div.copilot-prototype-ft-progress'));
-			for (let i = 1; i <= totalSteps; i++) {
-				const dot = append(dots, $('div.copilot-prototype-ft-progress-dot'));
-				if (i === currentStep) { dot.classList.add('active'); }
-				else if (i < currentStep) { dot.classList.add('completed'); }
-			}
-
-			// Action button (right side)
-			if (isLastStep) {
-				const gotItBtn = stepDisposables.add(new Button(footerRight, { ...defaultButtonStyles }));
-				gotItBtn.label = localize('tbb3FtGotIt', "Got It");
-				stepDisposables.add(gotItBtn.onDidClick(() => {
-					this._firstTimeStep = 1;
-					this.setActiveCell(this._activeSku, 'Default');
-				}));
-			}
-		};
-
-		renderStep();
-	}
-
 	// ---- Dashboard ----
 
 	renderDashboard(token: CancellationToken): HTMLElement {
@@ -3337,12 +3106,6 @@ export class CopilotTBB3StatusBarContribution extends Disposable implements IWor
 		const sku = this._activeSku;
 		const state = this._activeState;
 		const dashboard = $('div.copilot-prototype-dashboard');
-
-		// First Time onboarding — multi-step walkthrough
-		if (state === 'First Time') {
-			this.renderFirstTimeOnboarding(dashboard, disposables, sku);
-			return dashboard;
-		}
 
 		const isEnterprise = sku === 'Ent/Bus' || sku === 'Ent/Bus ULB';
 		const isUnlimitedEnt = sku === 'Ent/Bus';
@@ -3365,13 +3128,6 @@ export class CopilotTBB3StatusBarContribution extends Disposable implements IWor
 
 		const titleActions = append(header, $('div.copilot-prototype-dashboard-header-actions'));
 		const headerCtas = append(titleActions, $('div.copilot-prototype-dashboard-header-ctas'));
-		const whatsNewIcon = append(titleActions, $('div.copilot-prototype-dashboard-icon'));
-		whatsNewIcon.append(...renderLabelWithIcons('$(sparkle)'));
-		whatsNewIcon.title = localize('whatsNew', "What's New");
-		whatsNewIcon.tabIndex = 0;
-		whatsNewIcon.addEventListener('click', () => {
-			this.setActiveCell(this._activeSku, 'First Time');
-		});
 		const settingsIcon = append(titleActions, $('div.copilot-prototype-dashboard-icon'));
 		settingsIcon.append(...renderLabelWithIcons('$(settings)'));
 		settingsIcon.title = localize('settings', "Settings");
@@ -3407,7 +3163,7 @@ export class CopilotTBB3StatusBarContribution extends Disposable implements IWor
 						: localize('tbb3PaidApproachCelebrate', "You're getting close to your included credits for Copilot. Manage your budget to keep going."));
 			} else if (monthlyExhausted && hasOverage) {
 				// Pro/Pro+ + Max: monthly limit reached, overage now in use
-				this.createCelebrateMsg(usageContent, localize('tbb3MonthlyReachedCelebrate', "Your additional budget will keep Copilot going."));
+				this.createCelebrateMsg(usageContent, localize('tbb3MonthlyReachedCelebrate', "Additional budget will keep Copilot going."));
 			} else if (monthlyExhausted) {
 				if (isFree) {
 					this.createCelebrateMsg(usageContent, localize('tbb3FreeExhaustedCelebrate', "You're getting the most out of Copilot."));
@@ -3433,7 +3189,7 @@ export class CopilotTBB3StatusBarContribution extends Disposable implements IWor
 			const aic = CopilotPrototypeShellCoinStatusBarContribution.instance?.getTbb3AicAllocation(sku, state)
 				?? { monthlyTotal: 0, monthlyUsed: 0, overageTotal: 0, overageUsed: 0 };
 			const aicLabel = (used: number, total: number) => total > 0
-				? localize('tbb3AicFraction', "{0} / {1} used", used.toLocaleString(), total.toLocaleString())
+				? localize('tbb3AicFraction', "{0} / {1}", used.toLocaleString(), total.toLocaleString())
 				: undefined;
 
 			// Monthly Limit / Monthly Budget card.
@@ -3446,18 +3202,14 @@ export class CopilotTBB3StatusBarContribution extends Disposable implements IWor
 						: 42;
 			const monthlySev = (monthlyApproached || monthlyExhausted || overageExhausted) ? 'celebrate' as const : undefined;
 			const monthlyDisabled = false;
-			const transitionStyle = isFree ? 'slide' as const
-				: (sku === 'Max') ? 'scale' as const
-					: 'fade' as const;
 			this.createCard(cards, {
 				name: monthlyName,
-				resetLabel: this._getMonthlyResetLabel(),
+				resetLabel: localize('tbb3ResetMay1', "Resets May 1 at 10:00 AM"),
 				percent: monthlyPct,
 				severity: monthlySev,
 				highlight: false,
 				disabled: monthlyDisabled,
 				usedLabel: aicLabel(aic.monthlyUsed, aic.monthlyTotal),
-				transitionStyle,
 			});
 
 			// Free SKU also tracks an Inline Suggestions monthly cap.
@@ -3466,18 +3218,17 @@ export class CopilotTBB3StatusBarContribution extends Disposable implements IWor
 				const inlineTotal = 2000;
 				this.createCard(cards, {
 					name: localize('tbb3CardInline', "Inline Suggestions"),
-					resetLabel: this._getMonthlyResetLabel(),
+					resetLabel: localize('tbb3ResetMay1', "Resets May 1 at 10:00 AM"),
 					percent: 18,
-					usedLabel: localize('tbb3InlineFraction', "{0} / {1} used", inlineUsed.toLocaleString(), inlineTotal.toLocaleString()),
+					usedLabel: localize('tbb3InlineFraction', "{0} / {1}", inlineUsed.toLocaleString(), inlineTotal.toLocaleString()),
 				});
 			}
 		}
 
 		// --- Header CTAs ---
-		// Default and Reset states across all SKUs have no CTAs (per UX direction).
+		// Default state across all SKUs has no CTAs (per UX direction).
 		const isDefault = state === 'Default';
-		const isReset = monthlyReset || overageReset;
-		if (!isDefault && !isReset && !isEnterprise) {
+		if (!isDefault && !isEnterprise) {
 			if (isFree) {
 				// Free users must upgrade once monthly limit is exhausted — primary CTA.
 				const isPrimary = monthlyExhausted;
@@ -3508,16 +3259,13 @@ export class CopilotTBB3StatusBarContribution extends Disposable implements IWor
 			}
 		}
 
-		// Quick Settings (Inline Suggestions)
-		this.renderCollapsibleQuickSettings(contentWrapper, disposables);
-
-		// Workspace Index — non-expandable indicator row (VS Code only, not Agents app)
+		// Workspace Index — own expandable section (VS Code only, not Agents app)
 		if (!this.isAgentsApp()) {
-			this.renderCsiIndicatorRow(contentWrapper);
+			this.renderCollapsibleWorkspaceIndex(contentWrapper);
 		}
 
-		// Session Sync — non-expandable indicator row
-		this.renderSyncIndicatorRow(contentWrapper);
+		// Quick Settings
+		this.renderCollapsibleQuickSettings(contentWrapper, disposables);
 
 		return dashboard;
 	}
@@ -3552,174 +3300,6 @@ export class CopilotTBB3StatusBarContribution extends Disposable implements IWor
 			chevronEl.classList.add(...ThemeIcon.asClassNameArray(isExpanded ? Codicon.chevronDown : Codicon.chevronRight));
 			collapsibleHeader.setAttribute('aria-expanded', String(isExpanded));
 		});
-	}
-
-	private renderCsiIndicatorRow(container: HTMLElement): void {
-		const row = append(container, $('div.copilot-prototype-dashboard-indicator-row'));
-		const rowInner = append(row, $('div.copilot-prototype-dashboard-indicator-row-inner'));
-		append(rowInner, $('span.copilot-prototype-dashboard-indicator-label')).textContent = localize('wsIndexSection', "Codebase Semantic Index");
-
-		const infoIcon = append(rowInner, $('span.copilot-prototype-dashboard-indicator-info'));
-		infoIcon.append(...renderLabelWithIcons('$(info)'));
-		const csiTooltips: Record<typeof this._csiState, string> = {
-			ready: localize('csiTooltipReady', "Indexes your codebase for more relevant AI results. Your index is up to date and being used to improve suggestions."),
-			outOfDate: localize('csiTooltipOutOfDate', "Indexes your codebase for more relevant AI results. Your index is out of date — recent changes haven't been indexed yet."),
-			indexing: localize('csiTooltipIndexing', "Indexes your codebase for more relevant AI results. Your codebase is currently being indexed. This may take a few minutes."),
-			notIndexed: localize('csiTooltipNotIndexed', "Indexes your codebase for more relevant AI results. This repository hasn't been indexed yet. Trigger indexing to enable semantic search."),
-			notIndexable: localize('csiTooltipNotIndexable', "Indexes your codebase for more relevant AI results. This repository can't be indexed — it may be too large or not supported."),
-			notAuthorized: localize('csiTooltipNotAuthorized', "Indexes your codebase for more relevant AI results. You don't have permission to access the index for this repository."),
-			checking: localize('csiTooltipChecking', "Indexes your codebase for more relevant AI results. Checking the current index status..."),
-			resolving: localize('csiTooltipResolving', "Indexes your codebase for more relevant AI results. Resolving repository information..."),
-		};
-		infoIcon.dataset.tooltip = csiTooltips[this._csiState];
-		const csiTip = $('span.copilot-prototype-dashboard-indicator-tooltip');
-		csiTip.textContent = csiTooltips[this._csiState];
-		infoIcon.addEventListener('mouseenter', () => {
-			const rect = infoIcon.getBoundingClientRect();
-			const cs = getComputedStyle(infoIcon);
-			csiTip.style.background = cs.getPropertyValue('--vscode-editorHoverWidget-background') || '#2d2d2d';
-			csiTip.style.color = cs.getPropertyValue('--vscode-editorHoverWidget-foreground') || '#cccccc';
-			csiTip.style.borderColor = cs.getPropertyValue('--vscode-editorHoverWidget-border') || '#454545';
-			csiTip.style.fontFamily = cs.fontFamily;
-			infoIcon.ownerDocument.body.appendChild(csiTip);
-			const tipRect = csiTip.getBoundingClientRect();
-			const viewportWidth = infoIcon.ownerDocument.documentElement.clientWidth;
-			let left = rect.left;
-			if (left + tipRect.width > viewportWidth - 8) {
-				left = viewportWidth - tipRect.width - 8;
-			}
-			csiTip.style.top = `${rect.bottom + 4}px`;
-			csiTip.style.left = `${left}px`;
-		});
-		infoIcon.addEventListener('mouseleave', () => {
-			csiTip.remove();
-		});
-
-		const statusEl = append(rowInner, $('span.copilot-prototype-dashboard-indicator-status'));
-		switch (this._csiState) {
-			case 'ready':
-				statusEl.append(...renderLabelWithIcons('$(check) ' + localize('csiReady', "Ready")));
-				break;
-			case 'outOfDate': {
-				statusEl.textContent = localize('csiOutOfDate', "Out of date.");
-				const updateLink = append(statusEl, $('a.copilot-prototype-dashboard-indicator-action'));
-				updateLink.textContent = ' ' + localize('csiUpdate', "Update?");
-				updateLink.tabIndex = 0;
-				updateLink.role = 'button';
-				updateLink.addEventListener('click', (e) => {
-					e.stopPropagation();
-					this._csiState = 'indexing';
-					this.updateSharedDashboard();
-				});
-				break;
-			}
-			case 'indexing':
-				statusEl.append(...renderLabelWithIcons('$(sync~spin) ' + localize('csiIndexing', "Indexing...")));
-				break;
-			case 'notIndexed': {
-				statusEl.textContent = localize('csiNotIndexed', "Not indexed.");
-				const indexLink = append(statusEl, $('a.copilot-prototype-dashboard-indicator-action'));
-				indexLink.textContent = ' ' + localize('csiIndex', "Index?");
-				indexLink.tabIndex = 0;
-				indexLink.role = 'button';
-				indexLink.addEventListener('click', (e) => {
-					e.stopPropagation();
-					this._csiState = 'indexing';
-					this.updateSharedDashboard();
-				});
-				break;
-			}
-			case 'notIndexable':
-				statusEl.append(...renderLabelWithIcons('$(warning) ' + localize('csiNotIndexable', "Not available")));
-				break;
-			case 'notAuthorized':
-				statusEl.append(...renderLabelWithIcons('$(lock) ' + localize('csiNotAuthorized', "Not authorized")));
-				break;
-			case 'checking':
-				statusEl.append(...renderLabelWithIcons('$(loading~spin) ' + localize('csiChecking', "Checking...")));
-				break;
-			case 'resolving':
-				statusEl.append(...renderLabelWithIcons('$(loading~spin) ' + localize('csiResolving', "Resolving...")));
-				break;
-		}
-	}
-
-	private renderSyncIndicatorRow(container: HTMLElement): void {
-		const row = append(container, $('div.copilot-prototype-dashboard-indicator-row'));
-		const rowInner = append(row, $('div.copilot-prototype-dashboard-indicator-row-inner'));
-		append(rowInner, $('span.copilot-prototype-dashboard-indicator-label')).textContent = localize('syncLabel', "Session Sync");
-
-		const infoIcon = append(rowInner, $('span.copilot-prototype-dashboard-indicator-info'));
-		infoIcon.append(...renderLabelWithIcons('$(info)'));
-		const syncTooltips: Record<typeof this._syncState, string> = {
-			enabled: localize('syncTooltipEnabled', "Syncs session data to your GitHub.com account. Your sessions are being synced and available across devices."),
-			disabled: localize('syncTooltipDisabled', "Syncs session data to your GitHub.com account. Session sync is not enabled — your data stays local to this device."),
-			syncing: localize('syncTooltipSyncing', "Syncs session data to your GitHub.com account. A sync is currently in progress..."),
-			error: localize('syncTooltipError', "Syncs session data to your GitHub.com account. Something went wrong during the last sync. Try again later."),
-			paused: localize('syncTooltipPaused', "Syncs session data to your GitHub.com account. Sync is paused — no data is being uploaded until resumed."),
-		};
-		infoIcon.dataset.tooltip = syncTooltips[this._syncState];
-		const syncTip = $('span.copilot-prototype-dashboard-indicator-tooltip');
-		syncTip.textContent = syncTooltips[this._syncState];
-		infoIcon.addEventListener('mouseenter', () => {
-			const rect = infoIcon.getBoundingClientRect();
-			const cs = getComputedStyle(infoIcon);
-			syncTip.style.background = cs.getPropertyValue('--vscode-editorHoverWidget-background') || '#2d2d2d';
-			syncTip.style.color = cs.getPropertyValue('--vscode-editorHoverWidget-foreground') || '#cccccc';
-			syncTip.style.borderColor = cs.getPropertyValue('--vscode-editorHoverWidget-border') || '#454545';
-			syncTip.style.fontFamily = cs.fontFamily;
-			infoIcon.ownerDocument.body.appendChild(syncTip);
-			const tipRect = syncTip.getBoundingClientRect();
-			const viewportWidth = infoIcon.ownerDocument.documentElement.clientWidth;
-			let left = rect.left;
-			if (left + tipRect.width > viewportWidth - 8) {
-				left = viewportWidth - tipRect.width - 8;
-			}
-			syncTip.style.top = `${rect.bottom + 4}px`;
-			syncTip.style.left = `${left}px`;
-		});
-		infoIcon.addEventListener('mouseleave', () => {
-			syncTip.remove();
-		});
-
-		const statusEl = append(rowInner, $('span.copilot-prototype-dashboard-indicator-status'));
-		switch (this._syncState) {
-			case 'enabled':
-				statusEl.append(...renderLabelWithIcons('$(check) ' + localize('syncEnabled', "Enabled")));
-				break;
-			case 'disabled': {
-				statusEl.textContent = localize('syncDisabled', "Not enabled.");
-				const enableLink = append(statusEl, $('a.copilot-prototype-dashboard-indicator-action'));
-				enableLink.textContent = ' ' + localize('syncEnable', "Enable?");
-				enableLink.tabIndex = 0;
-				enableLink.role = 'button';
-				enableLink.addEventListener('click', (e) => {
-					e.stopPropagation();
-					this._syncState = 'enabled';
-					this.updateSharedDashboard();
-				});
-				break;
-			}
-			case 'syncing':
-				statusEl.append(...renderLabelWithIcons('$(sync~spin) ' + localize('syncSyncing', "Syncing...")));
-				break;
-			case 'error':
-				statusEl.append(...renderLabelWithIcons('$(error) ' + localize('syncError', "Sync error")));
-				break;
-			case 'paused': {
-				statusEl.append(...renderLabelWithIcons('$(debug-pause) ' + localize('syncPaused', "Paused.")));
-				const resumeLink = append(statusEl, $('a.copilot-prototype-dashboard-indicator-action'));
-				resumeLink.textContent = ' ' + localize('syncResume', "Resume?");
-				resumeLink.tabIndex = 0;
-				resumeLink.role = 'button';
-				resumeLink.addEventListener('click', (e) => {
-					e.stopPropagation();
-					this._syncState = 'syncing';
-					this.updateSharedDashboard();
-				});
-				break;
-			}
-		}
 	}
 
 	private renderCollapsibleQuickSettings(container: HTMLElement, disposables: DisposableStore): void {
@@ -3834,8 +3414,6 @@ export class CopilotTBB3StatusBarContribution extends Disposable implements IWor
 		usedLabel?: string;
 		/** When set, render a large number + label instead of % + bar (used when no upper bound is known). */
 		valueOnly?: { value: string; label: string };
-		/** Hover transition style: 'slide' (default), 'fade', or 'scale'. */
-		transitionStyle?: 'slide' | 'fade' | 'scale';
 	}): void {
 		const card = append(container, $('div.copilot-prototype-dashboard-card'));
 		if (opts.disabled) { card.classList.add('disabled'); }
@@ -3872,14 +3450,8 @@ export class CopilotTBB3StatusBarContribution extends Disposable implements IWor
 		percentLabel.textContent = localize('cardUsed', "used");
 		if (opts.usedLabel) {
 			const aicsLabel = append(percentLeft, $('span.copilot-prototype-dashboard-card-percent-aics.hover-detail'));
-			const fractionSpan = append(aicsLabel, $('span.hover-detail-fraction'));
-			fractionSpan.textContent = opts.usedLabel.replace(/\s*used$/, '');
-			const usedSuffix = append(aicsLabel, $('span.hover-detail-used'));
-			usedSuffix.textContent = ' ' + localize('cardUsed', "used");
+			aicsLabel.textContent = opts.usedLabel;
 			percentLeft.classList.add('has-hover-detail');
-			if (opts.transitionStyle) {
-				percentLeft.classList.add(`transition-${opts.transitionStyle}`);
-			}
 		}
 		const resetBadge = append(percentRow, $('span.copilot-prototype-dashboard-card-badge'));
 		resetBadge.textContent = opts.resetLabel;
@@ -3918,239 +3490,6 @@ export class CopilotTBB3StatusBarContribution extends Disposable implements IWor
 		if (opts.severity) { barContainer.classList.add(opts.severity); }
 		if (opts.percent >= 100) { barContainer.classList.add('full'); }
 		append(barContainer, $('div.copilot-prototype-dashboard-card-bar-fill')).style.width = `${opts.percent}%`;
-	}
-
-	// ---- Dashboard V2 (redesigned) ----
-
-	private _previewUpdateCallback: (() => void) | undefined;
-	private _csiState: 'ready' | 'outOfDate' | 'indexing' | 'notIndexed' | 'notIndexable' | 'notAuthorized' | 'checking' | 'resolving' = 'ready';
-	private _syncState: 'enabled' | 'disabled' | 'syncing' | 'error' | 'paused' = 'enabled';
-
-	private renderDashboardV2(container: HTMLElement, disposables: DisposableStore): HTMLElement {
-		const sku = this._activeSku;
-		const state = this._activeState;
-
-		const dashboard = append(container, $('div.copilot-prototype-dashboard-v2'));
-
-		const isEnterprise = sku === 'Ent/Bus' || sku === 'Ent/Bus ULB';
-		const isUnlimitedEnt = sku === 'Ent/Bus';
-		const hasOverage = sku === 'Pro/Pro+' || sku === 'Max';
-		const isFree = sku === 'Edu/Free';
-		const isProNoO = sku === 'Pro/Pro+ No O';
-		const monthlyApproached = state === 'Monthly Approached';
-		const monthlyExhausted = state === 'Monthly Exhausted';
-		const monthlyReset = state === 'Monthly Reset';
-		const overageExhausted = state === 'Overage Exhausted';
-		const overageReset = state === 'Overage Reset';
-		const isDefault = state === 'Default';
-
-		// Plan title
-		let planTitle: string;
-		switch (sku) {
-			case 'Edu/Free': planTitle = localize('v2TitleFree', "Copilot Free"); break;
-			case 'Pro/Pro+ No O': planTitle = localize('v2TitleProNoO', "Copilot Pro"); break;
-			case 'Pro/Pro+': planTitle = localize('v2TitlePro', "Copilot Pro+"); break;
-			case 'Max': planTitle = localize('v2TitleMax', "Copilot Max"); break;
-			case 'Ent/Bus ULB': planTitle = localize('v2TitleEntULB', "Copilot Enterprise ULB"); break;
-			case 'Ent/Bus': planTitle = localize('v2TitleEnt', "Copilot Enterprise"); break;
-			default: planTitle = localize('v2TitleDefault', "Copilot"); break;
-		}
-
-		// === Header ===
-		const header = append(dashboard, $('div.copilot-prototype-dashboard-v2-header'));
-		append(header, $('span.copilot-prototype-dashboard-v2-plan')).textContent = planTitle;
-
-		const headerActions = append(header, $('div.copilot-prototype-dashboard-v2-header-actions'));
-
-		// Header CTA buttons
-		if (!isDefault && !isEnterprise) {
-			if (hasOverage || (isProNoO && (monthlyApproached || monthlyExhausted))) {
-				const budgetBtn = disposables.add(new Button(headerActions, { ...defaultButtonStyles, secondary: true }));
-				budgetBtn.label = isProNoO ? localize('v2ConfigBudget', "Configure Budget") : localize('v2ManageBudget', "Manage Budget");
-				budgetBtn.element.classList.add('copilot-prototype-dashboard-v2-header-cta');
-			}
-		}
-
-		const settingsIcon = append(headerActions, $('div.copilot-prototype-dashboard-v2-settings-icon'));
-		settingsIcon.append(...renderLabelWithIcons('$(settings)'));
-		settingsIcon.title = localize('settings', "Settings");
-		settingsIcon.tabIndex = 0;
-
-		// === Credits Section ===
-		const creditsSection = append(dashboard, $('div.copilot-prototype-dashboard-v2-credits'));
-		if (monthlyApproached) { creditsSection.classList.add('approached'); }
-		if (monthlyExhausted || overageExhausted) { creditsSection.classList.add('exhausted'); }
-		if (monthlyReset || overageReset) { creditsSection.classList.add('reset'); }
-
-		if (isUnlimitedEnt) {
-			append(creditsSection, $('div.copilot-prototype-dashboard-v2-credits-included')).textContent =
-				localize('v2EntIncluded', "Included with your organization's plan.");
-		} else {
-			// Percentage
-			let pctUsed: number;
-			switch (state) {
-				case 'Monthly Approached': pctUsed = 75; break;
-				case 'Monthly Exhausted': case 'Overage Exhausted': pctUsed = 100; break;
-				case 'Monthly Reset': case 'Overage Reset': pctUsed = 0; break;
-				default: pctUsed = 32; break;
-			}
-
-			const creditsRow = append(creditsSection, $('div.copilot-prototype-dashboard-v2-credits-row'));
-			append(creditsRow, $('span.copilot-prototype-dashboard-v2-credits-title')).textContent = localize('v2CreditsUsed', "Credits Used");
-			append(creditsRow, $('span.copilot-prototype-dashboard-v2-credits-pct')).textContent = `${pctUsed}%`;
-
-			append(creditsSection, $('div.copilot-prototype-dashboard-v2-credits-reset')).textContent =
-				localize('v2ResetDate', "Resets May 31 at 5:00PM");
-
-			// Callout message (inline, italic) for non-default states
-			let calloutMsg: string | undefined;
-			if (monthlyApproached) {
-				calloutMsg = hasOverage
-					? localize('v2ApproachOverage', "You're approaching your included credits for Copilot. Your additional budget will keep things flowing once you hit it.")
-					: isFree
-						? localize('v2ApproachFree', "You're approaching your included credits for Copilot Free. Upgrade to keep the momentum going.")
-						: isEnterprise
-							? localize('v2ApproachEnt', "Copilot will pause when your included credits are reached. Request more usage from your admin.")
-							: localize('v2ApproachPaid', "You're getting close to your included credits for Copilot. Manage your budget to keep going.");
-			} else if (monthlyExhausted) {
-				calloutMsg = hasOverage
-					? localize('v2ExhaustOverage', "Your additional budget will keep Copilot going.")
-					: isFree
-						? localize('v2ExhaustFree', "You're getting the most out of Copilot. Upgrade to keep going.")
-						: isEnterprise
-							? localize('v2ExhaustEnt', "Copilot is paused until your included credits reset. Request more usage from your admin.")
-							: localize('v2ExhaustPaid', "Configure overage spend to keep building.");
-			} else if (overageExhausted) {
-				calloutMsg = localize('v2OverageExhaust', "You've used all of your additional budget. Increase your budget to keep going.");
-			} else if (monthlyReset || overageReset) {
-				calloutMsg = localize('v2Reset', "Copilot is available. Start building.");
-			}
-			if (calloutMsg) {
-				append(creditsSection, $('div.copilot-prototype-dashboard-v2-credits-callout')).textContent = calloutMsg;
-			}
-		}
-
-		// === Indicator Rows ===
-		const indicators = append(dashboard, $('div.copilot-prototype-dashboard-v2-indicators'));
-
-		// Inline Suggestions (expandable)
-		this.renderInlineSuggestionsRow(indicators, disposables);
-
-		// Codebase Semantic Index (non-expandable indicator)
-		this.renderCsiRow(indicators, disposables);
-
-		// Session Sync (non-expandable indicator)
-		this.renderSyncRow(indicators, disposables);
-
-		return dashboard;
-	}
-
-	private renderInlineSuggestionsRow(container: HTMLElement, disposables: DisposableStore): void {
-		const row = append(container, $('div.copilot-prototype-dashboard-v2-indicator-row.expandable'));
-		const rowHeader = append(row, $('button.copilot-prototype-dashboard-v2-indicator-header'));
-		append(rowHeader, $('span.copilot-prototype-dashboard-v2-indicator-label')).textContent = localize('v2InlineSuggestions', "Inline Suggestions");
-		const chevron = append(rowHeader, $('span.copilot-prototype-dashboard-v2-indicator-chevron'));
-		chevron.classList.add(...ThemeIcon.asClassNameArray(Codicon.chevronRight));
-		append(rowHeader, $('span.copilot-prototype-dashboard-v2-indicator-status')).textContent = localize('enabled', "Enabled");
-
-		const expandContent = append(row, $('div.copilot-prototype-dashboard-v2-inline-content'));
-
-		// Checkboxes
-		const checks = [
-			{ label: localize('v2GhostText', "Ghost text suggestions"), checked: true },
-			{ label: localize('v2GhostTextLang', "Ghost text suggestions for Typescript"), checked: false },
-			{ label: localize('v2NextEdit', "Next edit suggestions"), checked: true },
-		];
-		for (const item of checks) {
-			const checkRow = append(expandContent, $('div.copilot-prototype-dashboard-v2-check-row'));
-			const cb = disposables.add(new Checkbox(item.label, item.checked, { ...defaultCheckboxStyles }));
-			checkRow.appendChild(cb.domNode);
-			append(checkRow, $('span.copilot-prototype-dashboard-v2-check-label')).textContent = item.label;
-		}
-
-		// Dropdowns + Snooze row
-		const controlsRow = append(expandContent, $('div.copilot-prototype-dashboard-v2-controls-row'));
-		const modeSelect = append(controlsRow, $('select.copilot-prototype-dashboard-v2-select'));
-		for (const opt of ['Auto']) {
-			const option = append(modeSelect, $('option'));
-			option.textContent = opt;
-			option.setAttribute('value', opt);
-		}
-		const modelSelect = append(controlsRow, $('select.copilot-prototype-dashboard-v2-select'));
-		for (const opt of ['copilot-nes-oct']) {
-			const option = append(modelSelect, $('option'));
-			option.textContent = opt;
-			option.setAttribute('value', opt);
-		}
-		const snoozeContainer = append(controlsRow, $('span.copilot-prototype-dashboard-v2-snooze'));
-		append(snoozeContainer, $('span')).textContent = localize('snooze', "Snooze");
-		const snoozeInfo = append(snoozeContainer, $('span.copilot-prototype-dashboard-v2-info-icon'));
-		snoozeInfo.append(...renderLabelWithIcons('$(info)'));
-		snoozeInfo.title = localize('v2SnoozeTooltip', "Hide inline suggestions for 5 minutes");
-
-		// Toggle expand/collapse
-		rowHeader.addEventListener('click', () => {
-			const expanded = row.classList.toggle('expanded');
-			chevron.className = 'copilot-prototype-dashboard-v2-indicator-chevron';
-			chevron.classList.add(...ThemeIcon.asClassNameArray(expanded ? Codicon.chevronDown : Codicon.chevronRight));
-		});
-	}
-
-	private renderCsiRow(container: HTMLElement, _disposables: DisposableStore): void {
-		const row = append(container, $('div.copilot-prototype-dashboard-v2-indicator-row'));
-		const rowHeader = append(row, $('div.copilot-prototype-dashboard-v2-indicator-header'));
-		append(rowHeader, $('span.copilot-prototype-dashboard-v2-indicator-label')).textContent = localize('v2CsiLabel', "Codebase Semantic Index");
-
-		const infoIcon = append(rowHeader, $('span.copilot-prototype-dashboard-v2-info-icon'));
-		infoIcon.append(...renderLabelWithIcons('$(info)'));
-		infoIcon.title = localize('v2CsiTooltip', "Indexes your codebase for improved code search and context-aware suggestions. Helps Copilot understand your project structure.");
-
-		const statusEl = append(rowHeader, $('span.copilot-prototype-dashboard-v2-indicator-status'));
-		switch (this._csiState) {
-			case 'ready':
-				statusEl.textContent = localize('ready', "Ready");
-				break;
-			case 'outOfDate': {
-				statusEl.textContent = localize('v2CsiOutOfDate', "Out of date.");
-				const updateLink = append(statusEl, $('a.copilot-prototype-dashboard-v2-action-link'));
-				updateLink.textContent = ' ' + localize('v2Update', "Update?");
-				updateLink.tabIndex = 0;
-				updateLink.role = 'button';
-				updateLink.addEventListener('click', (e) => {
-					e.stopPropagation();
-					this._csiState = 'indexing';
-				});
-				break;
-			}
-			case 'indexing':
-				statusEl.textContent = localize('v2CsiIndexing', "Indexing...");
-				break;
-		}
-	}
-
-	private renderSyncRow(container: HTMLElement, _disposables: DisposableStore): void {
-		const row = append(container, $('div.copilot-prototype-dashboard-v2-indicator-row'));
-		const rowHeader = append(row, $('div.copilot-prototype-dashboard-v2-indicator-header'));
-		append(rowHeader, $('span.copilot-prototype-dashboard-v2-indicator-label')).textContent = localize('v2SyncLabel', "Session Sync");
-
-		const infoIcon = append(rowHeader, $('span.copilot-prototype-dashboard-v2-info-icon'));
-		infoIcon.append(...renderLabelWithIcons('$(info)'));
-		infoIcon.title = localize('v2SyncTooltip', "Syncs your chat sessions across devices so you can pick up where you left off.");
-
-		const statusEl = append(rowHeader, $('span.copilot-prototype-dashboard-v2-indicator-status'));
-		if (this._syncState === 'enabled') {
-			statusEl.textContent = localize('enabled', "Enabled");
-		} else {
-			statusEl.textContent = localize('v2SyncDisabled', "Not enabled.");
-			const enableLink = append(statusEl, $('a.copilot-prototype-dashboard-v2-action-link'));
-			enableLink.textContent = ' ' + localize('v2Enable', "Enable?");
-			enableLink.tabIndex = 0;
-			enableLink.role = 'button';
-			enableLink.addEventListener('click', (e) => {
-				e.stopPropagation();
-				this._syncState = 'enabled';
-			});
-		}
 	}
 
 	// ---- Controller Grid ----
@@ -4194,33 +3533,6 @@ export class CopilotTBB3StatusBarContribution extends Disposable implements IWor
 		});
 
 		container.append(tabBar, individualGrid, enterpriseGrid);
-
-		// === CSI & Sync State Controls ===
-		const subStateControls = append(container, $('div.copilot-prototype-coin-substate-controls'));
-		append(subStateControls, $('span.copilot-prototype-coin-substate-label')).textContent = localize('v2CsiStateLabel', "CSI:");
-		const csiLinks = ['ready', 'outOfDate', 'indexing', 'notIndexed', 'notIndexable', 'notAuthorized', 'checking', 'resolving'] as const;
-		for (const csiVal of csiLinks) {
-			const link = append(subStateControls, $('a.copilot-prototype-coin-grid-link'));
-			link.textContent = csiVal;
-			link.tabIndex = 0;
-			link.role = 'button';
-			link.addEventListener('click', () => {
-				this._csiState = csiVal;
-				this.updateSharedDashboard();
-			});
-		}
-		append(subStateControls, $('span.copilot-prototype-coin-substate-label')).textContent = localize('v2SyncStateLabel', "Sync:");
-		const syncLinks = ['enabled', 'disabled', 'syncing', 'error', 'paused'] as const;
-		for (const syncVal of syncLinks) {
-			const link = append(subStateControls, $('a.copilot-prototype-coin-grid-link'));
-			link.textContent = syncVal;
-			link.tabIndex = 0;
-			link.role = 'button';
-			link.addEventListener('click', () => {
-				this._syncState = syncVal;
-				this.updateSharedDashboard();
-			});
-		}
 	}
 
 	private buildGrid(skus: readonly string[], states: readonly string[], disposables: DisposableStore): HTMLElement {
