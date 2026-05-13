@@ -11,6 +11,10 @@ can see the shape of the impact, not just a flat list.
 
 ![ImpactFlow splash — stylized impact graph with seed node and radiating, risk-colored dependents](media/impactflow-splash.svg)
 
+![ImpactFlow — live impact graph from the standalone demo, showing auth.ts as the seed (purple diamond) and 15 downstream modules colored by computed risk level](media/impactflow-screenshot.png)
+
+> *Live screenshot from the interactive browser demo — the same output the extension renders inside a VS Code webview. Reproduce it by opening [`../demo/track2-impactflow.html`](../demo/track2-impactflow.html) from the portfolio branch.*
+
 ---
 
 ## Why does this exist?
